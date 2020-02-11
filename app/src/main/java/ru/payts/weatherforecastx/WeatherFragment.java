@@ -36,6 +36,8 @@ public class WeatherFragment extends Fragment {
     TextView currentTemperatureField;
     TextView weatherIcon;
     ImageView weatherIconImage;
+    ThermometerView thermometerView;
+
 
     private View.OnClickListener listener;
 
@@ -58,8 +60,15 @@ public class WeatherFragment extends Fragment {
         detailsField = (TextView) rootView.findViewById(R.id.details_field);
         currentTemperatureField = (TextView) rootView.findViewById(R.id.current_temperature_field);
         weatherIcon = (TextView) rootView.findViewById(R.id.weather_icon);
-        weatherIconImage = (ImageView) rootView.findViewById(R.id.weather_icon_image);
+        /*weatherIconImage = (ImageView) rootView.findViewById(R.id.weather_icon_image);*/
         weatherIcon.setTypeface(weatherFont);
+        thermometerView = rootView.findViewById(R.id.thermometerView);
+        thermometerView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(WeatherFragment.super.getContext(), "Нажали на градусник", Toast.LENGTH_SHORT).show();
+            }
+        });
         return rootView;
     }
 
@@ -174,7 +183,7 @@ public class WeatherFragment extends Fragment {
             }
         }
         weatherIcon.setText(icon);
-
+        /*
         URL url = null;
         Bitmap bmp = null;
         try {
@@ -185,7 +194,7 @@ public class WeatherFragment extends Fragment {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        weatherIconImage.setImageBitmap(bmp);
+        weatherIconImage.setImageBitmap(bmp);*/
     }
 
     public void changeCity(String city, String lang) {

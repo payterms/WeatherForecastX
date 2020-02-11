@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     String currentCity;
     private AppBarConfiguration mAppBarConfiguration;
+    WeatherFragment weatherFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
-        WeatherFragment weatherFragment = new WeatherFragment();
+        weatherFragment = new WeatherFragment();
         weatherFragment.changeCity( currentCity, Locale.getDefault().getLanguage());
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.weather_container, weatherFragment);
@@ -190,9 +191,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void changeCity(String city, String lang) {
-        /*WeatherFragment wf = (WeatherFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.weather_container);
-        wf.changeCity(city, lang);*/
+        weatherFragment.changeCity(city, lang);
         currentCity = city;
         new CityPreference(this).setCity(city);
     }
