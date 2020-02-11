@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WeatherForecastX</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="menu_home">Текущая погода</string>
+    <string name="menu_gallery">Список городов</string>
+    <string name="menu_slideshow">Погода на карте</string>
+    <string name="menu_tools">Tools</string>
+    <string name="menu_share">Share</string>
+    <string name="menu_send">Send</string>
+
+    <string name="change_city">Изменить город</string>
+    <string name="activity_second">Вторая активность</string>
+    <string name="place_not_found">Извините, данные не получены</string>
+    <string name="to_back">Назад</string>
+    <string name="to_second">Ко второй</string>
+    <string name="humidity">Влажность: </string>
+    <string name="pressure">Атм.давление: </string>
+    <string name="temperature">Температура: </string>
+    <string name="lastupdate">Обновлено: </string>
+    <string name="changecity">Изменить город</string>
+    <string name="gobutton">Вперед!</string>
+    <string name="add_city">Добавить город</string>
+    <string name="search_city">Найти город</string>
+    <string name="remove_city">Удалить город</string>
+    <string name="clear_all">Удалить все</string>
+    <string name="more">Еще</string>
+    <string name="mesure_items">Единицы</string>
+    <string name="settings">Настройки</string>
+    <string name="action_not_found">Not Found</string>
+
+    <string-array name="citylist">
+        <item>Мурманск</item>
+        <item>Минск</item>
+        <item>Москва</item>
+        <item>Белгород</item>
+        <item>Архыз</item>
+    </string-array>
+
+</resources>
