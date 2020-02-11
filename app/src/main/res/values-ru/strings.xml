@@ -3,21 +3,21 @@
     <string name="app_name">WeatherForecastX</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Погодный Оракул</string>
+    <string name="nav_header_subtitle">somemail@some.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
     <string name="menu_home">Текущая погода</string>
     <string name="menu_gallery">Список городов</string>
     <string name="menu_slideshow">Погода на карте</string>
-    <string name="menu_tools">Tools</string>
-    <string name="menu_share">Share</string>
-    <string name="menu_send">Send</string>
+    <string name="menu_tools">Инструменты</string>
+    <string name="menu_share">О разработчике</string>
+    <string name="menu_send">Форма обратной связи</string>
 
     <string name="change_city">Изменить город</string>
     <string name="activity_second">Вторая активность</string>
-    <string name="place_not_found">Извините, данные не получены</string>
+    <string name="place_not_found">Извините, данных нет</string>
     <string name="to_back">Назад</string>
     <string name="to_second">Ко второй</string>
     <string name="humidity">Влажность: </string>
@@ -34,6 +34,7 @@
     <string name="mesure_items">Единицы</string>
     <string name="settings">Настройки</string>
     <string name="action_not_found">Not Found</string>
+    <string name="button">Ok</string>
 
     <string-array name="citylist">
         <item>Мурманск</item>
@@ -42,5 +43,6 @@
         <item>Белгород</item>
         <item>Архыз</item>
     </string-array>
+    <string name="press_button">Сообщение сервера</string>
 
 </resources>

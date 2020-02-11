@@ -1,5 +1,6 @@
 package ru.payts.weatherforecastx;
 
+import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,6 +15,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import org.json.JSONException;
@@ -87,9 +89,29 @@ public class WeatherFragment extends Fragment {
                 if (json == null) {
                     handler.post(new Runnable() {
                         public void run() {
-                            Toast.makeText(getActivity(),
+                            // Создаем билдер и передаем контекст приложения
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                            // в билдере указываем заголовок окна (можно указывать как ресурс, так и строку)
+                            builder.setTitle(R.string.press_button)
+                                    // указываем сообщение в окне (также есть вариант со строковым параметром)
+                                    .setMessage(R.string.place_not_found)
+                                    // можно указать и пиктограмму
+                                    .setIcon(R.drawable.moose)
+                                    // из этого окна нельзя выйти кнопкой back
+                                    .setCancelable(false)
+                                    // устанавливаем кнопку (название кнопки также можно задавать строкой)
+                                    .setPositiveButton(R.string.button,
+                                            // Ставим слушатель, нажатие будем обрабатывать
+                                            new DialogInterface.OnClickListener() {
+                                                public void onClick(DialogInterface dialog, int id) {
+                                                    //Toast.makeText(getActivity(), "Кнопка нажата", Toast.LENGTH_SHORT).show();
+                                                }
+                                            });
+                            AlertDialog alert = builder.create();
+                            alert.show();
+                            /*Toast.makeText(getActivity(),
                                     getActivity().getString(R.string.place_not_found),
-                                    Toast.LENGTH_LONG).show();
+                                    Toast.LENGTH_LONG).show();*/
                         }
                     });
                 } else {
