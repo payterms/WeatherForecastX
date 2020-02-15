@@ -1,5 +1,6 @@
 package ru.payts.weatherforecastx;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -61,7 +62,7 @@ public class ThermometerView extends View {
         init();
     }
 
-    public void setlevel(int level){
+    public void setlevel(int level) {
         this.level = level;
     }
 
@@ -93,7 +94,7 @@ public class ThermometerView extends View {
     }
 
     // Инициализация атрибутов пользовательского элемента из xml
-    private void initAttr(Context context, AttributeSet attrs){
+    private void initAttr(Context context, AttributeSet attrs) {
 
         // При помощи этого метода получаем доступ к набору атрибутов.
         // На выходе массив со значениями
@@ -109,7 +110,7 @@ public class ThermometerView extends View {
         // то будет подставлятся эначение по умолчанию.
         levelColor = typedArray.getColor(R.styleable.ThermometerView_level_color, Color.BLUE);
         levelPressedColor = typedArray.getColor(R.styleable.ThermometerView_level_pressed_color, Color.YELLOW);
-        
+
         // Обратите внимание, что первый параметр пишется особым способом
         // через подчерки. первое слово означает имя определения
         // <declare-styleable name="ThermometerView">
@@ -125,7 +126,7 @@ public class ThermometerView extends View {
     }
 
     // Начальная инициализация полей класса
-    private void init(){
+    private void init() {
         thermometerPaint = new Paint();
         thermometerPaint.setColor(thermometerColor);
         thermometerPaint.setStyle(Paint.Style.FILL);
@@ -160,7 +161,7 @@ public class ThermometerView extends View {
                 height - padding);
         levelRectangle.set(2 * padding,
                 2 * padding,
-                (int)((width - 2 * padding - headWidth)*((double)level/(double)100)),
+                (int) ((width - 2 * padding - headWidth) * ((double) level / (double) 100)),
                 height - 2 * padding);
     }
 
@@ -181,16 +182,17 @@ public class ThermometerView extends View {
     }
 
     // Этот метод срабатывает при касании элемента
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         Log.d(TAG, "onTouchEvent");
-        
+
         // получить действие, может быть касанием, отпусканием, перемещением...
         int action = event.getAction();
 
         // Проверка на начало касания (нажали)
         pressed = action == MotionEvent.ACTION_DOWN;
-        if(action == MotionEvent.ACTION_DOWN){
+        if (action == MotionEvent.ACTION_DOWN) {
             // Если слушатель был установлен, то вызовем его метод
             if (listener != null) {
                 listener.onClick(this);
@@ -207,9 +209,10 @@ public class ThermometerView extends View {
     // установка слушателя, это обычный слушатель,
     // с каким уже сталкивались при обработке нажатий на кнопки
     @Override
-    public void setOnClickListener(View.OnClickListener listener){
+    public void setOnClickListener(View.OnClickListener listener) {
         this.listener = listener;
     }
+
     // Методы жизненного цикла, для изучения
     @Override
     protected void onAttachedToWindow() {

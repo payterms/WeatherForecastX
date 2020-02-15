@@ -3,33 +3,28 @@ package ru.payts.weatherforecastx;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
 import android.text.InputType;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
-
-import androidx.drawerlayout.widget.DrawerLayout;
-
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
-import android.view.Menu;
-import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.Toast;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -54,11 +49,13 @@ public class MainActivity extends AppCompatActivity {
         initFab();
 
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
+
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
@@ -127,20 +124,16 @@ public class MainActivity extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
 
         weatherFragment = new WeatherFragment();
-        weatherFragment.changeCity( currentCity, Locale.getDefault().getLanguage());
+        weatherFragment.changeCity(currentCity, Locale.getDefault().getLanguage());
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.weather_container, weatherFragment);
         transaction.commit();
-
-        //searchEditText = findViewById(R.id.searchEditText);
-
     }
 
 
     private void handleMenuItemClick(MenuItem item) {
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         switch (id) {
             case R.id.menu_add: {
                 adapter.addItem(currentCity);
@@ -164,13 +157,15 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
             default: {
-                if(id != R.id.menu_more) {
-                    /*Toast.makeText(getApplicationContext(), getString(R.string.action_not_found),
-                            Toast.LENGTH_SHORT).show();*/
+                if (id != R.id.menu_more) {
+                    Toast.makeText(getApplicationContext(), getString(R.string.action_not_found),
+                            Toast.LENGTH_SHORT).show();
                 }
             }
-
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            ActionBar bar = getSupportActionBar();
+            if (bar != null) {
+                bar.setDisplayHomeAsUpEnabled(true);
+            }
         }
     }
 
@@ -202,7 +197,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onRestoreInstanceState(Bundle saveInstanceState) {
+    protected void onRestoreInstanceState(@NonNull Bundle saveInstanceState) {
         super.onRestoreInstanceState(saveInstanceState);
         System.out.println("Повторный запуск!! - onRestoreInstanceState()");
     }
@@ -220,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle saveInstanceState) {
+    protected void onSaveInstanceState(@NonNull Bundle saveInstanceState) {
         super.onSaveInstanceState(saveInstanceState);
         System.out.println("onSaveInstanceState()");
     }
