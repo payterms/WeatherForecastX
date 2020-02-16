@@ -1,15 +1,10 @@
 package ru.payts.weatherforecastx;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.DialogInterface;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,19 +12,22 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import ru.payts.weatherforecastx.rest.OpenWeatherRepo;
+import ru.payts.weatherforecastx.rest.entities.WeatherRequestRestModel;
 
 public class WeatherFragment extends Fragment {
 
@@ -43,10 +41,14 @@ public class WeatherFragment extends Fragment {
     private ThermometerView thermometerView;
     private String icon;
     private Handler handler;
+    private CityPreference cityPreference;
+    private WeatherFragment weatherFragment;
+    private float currentTemp;
 
 
     public WeatherFragment() {
         handler = new Handler();
+        weatherFragment = this;
     }
 
     @Override
@@ -58,15 +60,10 @@ public class WeatherFragment extends Fragment {
         detailsField = rootView.findViewById(R.id.details_field);
         currentTemperatureField = rootView.findViewById(R.id.current_temperature_field);
         weatherIcon = rootView.findViewById(R.id.weather_icon);
-        /*weatherIconImage = (ImageView) rootView.findViewById(R.id.weather_icon_image);*/
+        weatherIconImage = rootView.findViewById(R.id.weather_icon_image);
         weatherIcon.setTypeface(weatherFont);
         thermometerView = rootView.findViewById(R.id.thermometerView);
-        thermometerView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(WeatherFragment.super.getContext(), "Нажали на градусник", Toast.LENGTH_SHORT).show();
-            }
-        });
+        thermometerView.setOnClickListener(v -> Toast.makeText(WeatherFragment.super.getContext(), "Нажали на градусник", Toast.LENGTH_SHORT).show());
         return rootView;
     }
 
@@ -74,55 +71,63 @@ public class WeatherFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         weatherFont = Typeface.createFromAsset(Objects.requireNonNull(getActivity()).getAssets(), "fonts/weather.ttf");
-        updateWeatherData(new CityPreference(getActivity()).getCity(), Locale.getDefault().getLanguage());
+        cityPreference = new CityPreference(getActivity());
+        String city = cityPreference.getCity();
+        currentTemp = cityPreference.getTemperature();
+        updateWeatherData(city, Locale.getDefault().getLanguage());
+
     }
 
-    private void updateWeatherData(final String city, final String lang) {
-        new Thread() {
-            public void run() {
-                final JSONObject json = RemoteFetch.getJSON(getActivity(), city, lang);
-                if (json == null) {
-                    handler.post(new Runnable() {
-                        public void run() {
-                            // Создаем билдер и передаем контекст приложения
-                            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-                            // в билдере указываем заголовок окна (можно указывать как ресурс, так и строку)
-                            builder.setTitle(R.string.press_button)
-                                    // указываем сообщение в окне (также есть вариант со строковым параметром)
-                                    .setMessage(R.string.place_not_found)
-                                    // можно указать и пиктограмму
-                                    .setIcon(R.drawable.moose)
-                                    // из этого окна нельзя выйти кнопкой back
-                                    .setCancelable(false)
-                                    // устанавливаем кнопку (название кнопки также можно задавать строкой)
-                                    .setPositiveButton(R.string.button,
-                                            // Ставим слушатель, нажатие будем обрабатывать
-                                            new DialogInterface.OnClickListener() {
-                                                public void onClick(DialogInterface dialog, int id) {
-                                                    //Toast.makeText(getActivity(), "Кнопка нажата", Toast.LENGTH_SHORT).show();
-                                                }
-                                            });
-                            AlertDialog alert = builder.create();
-                            alert.show();
-                            /*Toast.makeText(getActivity(),
-                                    getActivity().getString(R.string.place_not_found),
-                                    Toast.LENGTH_LONG).show();*/
+    void updateWeatherData(final String city, final String lang) {
+        OpenWeatherRepo.getSingleton().getAPI().loadWeather(city,
+                "fea82f030303d179dd680b5ade7deeb0", "metric")
+                .enqueue(new Callback<WeatherRequestRestModel>() {
+                    @Override
+                    public void onResponse(@NonNull Call<WeatherRequestRestModel> call,
+                                           @NonNull Response<WeatherRequestRestModel> response) {
+                        if (response.body() != null && response.isSuccessful()) {
+                            renderWeather(response.body());
+                        } else {
+                            //Похоже, код у нас не в диапазоне [200..300) и случилась ошибка
+                            //обрабатываем ее
+                            if (response.code() == 500) {
+                                //ой, случился Internal Server Error. Решаем проблему
+                                // Создаем билдер и передаем контекст приложения
+                                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                                // в билдере указываем заголовок окна (можно указывать как ресурс, так и строку)
+                                builder.setTitle(R.string.press_button)
+                                        // указываем сообщение в окне (также есть вариант со строковым параметром)
+                                        .setMessage(R.string.place_not_found)
+                                        // можно указать и пиктограмму
+                                        .setIcon(R.drawable.moose)
+                                        // из этого окна нельзя выйти кнопкой back
+                                        .setCancelable(false)
+                                        // устанавливаем кнопку (название кнопки также можно задавать строкой)
+                                        .setPositiveButton(R.string.button,
+                                                // Ставим слушатель, нажатие будем обрабатывать
+                                                new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int id) {
+                                                        //Toast.makeText(getActivity(), "Кнопка нажата", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                AlertDialog alert = builder.create();
+                                alert.show();
+                            } else if (response.code() == 401) {
+                                //не авторизованы, что-то с этим делаем
+                                Toast.makeText(getActivity(), "Not Authorised", Toast.LENGTH_SHORT).show();
+                            }// и так далее
                         }
-                    });
-                } else {
-                    handler.post(new Runnable() {
-                        public void run() {
-                            renderWeather(json);
-                        }
-                    });
-                }
-            }
-        }.start();
-    }
+                    }
 
-    public String getIcon() {
-        return icon;
+                    //сбой при интернет подключении
+                    @Override
+                    public void onFailure(Call<WeatherRequestRestModel> call, Throwable t) {
+                        Toast.makeText(getActivity().getBaseContext(), getString(R.string.network_error),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private String getIconLink() {
@@ -133,40 +138,49 @@ public class WeatherFragment extends Fragment {
         this.icon = icon;
     }
 
-    @SuppressLint("DefaultLocale")
-    private void renderWeather(JSONObject json) {
-        try {
-            String currentField;
-            currentField = json.getString("name").toUpperCase(Resources.getSystem().getConfiguration().locale) +
-                    ", " +
-                    json.getJSONObject("sys").getString("country");
-            cityField.setText(currentField);
-            JSONObject details = json.getJSONArray("weather").getJSONObject(0);
-            JSONObject main = json.getJSONObject("main");
-            currentField = details.getString("description").toUpperCase(Resources.getSystem().getConfiguration().locale) +
-                    "\n" + getString(R.string.temperature) + main.getString("temp") + " C" +
-                    "\n" + getString(R.string.humidity) + main.getString("humidity") + "%" +
-                    "\n" + getString(R.string.pressure) + main.getString("pressure") + " hPa";
-            detailsField.setText(currentField);
+    private void renderWeather(WeatherRequestRestModel model) {
+        setPlaceName(model.name, model.sys.country);
+        setDetails(model.weather[0].description, model.main.humidity, model.main.pressure);
+        setCurrentTemp(model.main.temp);
+        setUpdatedText(model.dt);
+        setWeatherIcon(model.weather[0].id,
+                model.sys.sunrise * 1000,
+                model.sys.sunset * 1000);
+        setWeatherIconImage(model.weather[0].icon);
+    }
 
-            setIcon(details.getString("icon"));
-            currentField = String.format("%.2f", main.getDouble("temp")) + " ℃";
-            currentTemperatureField.setText(currentField);
+    private void setWeatherIconImage(String iconID) {
+        String iconLink;
+        setIcon(iconID);
+        iconLink = getIconLink();
+        Picasso.get().load(iconLink).into(weatherIconImage);
+    }
 
-            DateFormat df = DateFormat.getDateTimeInstance();
-            String updatedOn = df.format(new Date(json.getLong("dt") * 1000));
-            currentField = getString(R.string.lastupdate) + updatedOn;
-            updatedField.setText(currentField);
+    private void setPlaceName(String name, String country) {
+        String cityText = name.toUpperCase() + ", " + country;
+        cityField.setText(cityText);
+        cityPreference.setCity(name.toUpperCase());
+    }
 
-            setWeatherIcon(details.getInt("id"),
-                    json.getJSONObject("sys").getLong("sunrise") * 1000,
-                    json.getJSONObject("sys").getLong("sunset") * 1000);
+    private void setDetails(String description, float humidity, float pressure) {
+        String detailsText = description.toUpperCase() + "\n"
+                + "Humidity: " + humidity + "%" + "\n"
+                + "Pressure: " + pressure + "hPa";
+        detailsField.setText(detailsText);
+    }
 
-        } catch (JSONException e) {
-            Log.e("Weather", "One or more fields not found in the JSON data");
-        } catch (Exception e) {
-            Log.e("Weather", "Network Connection Exception");
-        }
+    private void setCurrentTemp(float temp) {
+        currentTemp = temp;
+        cityPreference.setTemperature(temp);
+        String currentTextText = String.format(Locale.getDefault(), "%.2f", temp) + "\u2103";
+        currentTemperatureField.setText(currentTextText);
+    }
+
+    private void setUpdatedText(long dt) {
+        DateFormat dateFormat = DateFormat.getDateTimeInstance();
+        String updateOn = dateFormat.format(new Date(dt * 1000));
+        String updatedText = "Last update: " + updateOn;
+        updatedField.setText(updatedText);
     }
 
     private void setWeatherIcon(int actualId, long sunrise, long sunset) {
@@ -174,47 +188,37 @@ public class WeatherFragment extends Fragment {
         Activity currentActivity = getActivity();
         if (currentActivity == null)
             return;
-        String icon = "";
+        String textIcon = "";
         if (actualId == 800) {
             long currentTime = new Date().getTime();
             if (currentTime >= sunrise && currentTime < sunset) {
-                icon = currentActivity.getString(R.string.weather_sunny);
+                textIcon = currentActivity.getString(R.string.weather_sunny);
             } else {
-                icon = currentActivity.getString(R.string.weather_clear_night);
+                textIcon = currentActivity.getString(R.string.weather_clear_night);
             }
         } else {
             switch (id) {
                 case 2:
-                    icon = currentActivity.getString(R.string.weather_thunder);
+                    textIcon = currentActivity.getString(R.string.weather_thunder);
                     break;
                 case 3:
-                    icon = currentActivity.getString(R.string.weather_drizzle);
+                    textIcon = currentActivity.getString(R.string.weather_drizzle);
                     break;
                 case 7:
-                    icon = currentActivity.getString(R.string.weather_foggy);
+                    textIcon = currentActivity.getString(R.string.weather_foggy);
                     break;
                 case 8:
-                    icon = currentActivity.getString(R.string.weather_cloudy);
+                    textIcon = currentActivity.getString(R.string.weather_cloudy);
                     break;
                 case 6:
-                    icon = currentActivity.getString(R.string.weather_snowy);
+                    textIcon = currentActivity.getString(R.string.weather_snowy);
                     break;
                 case 5:
-                    icon = currentActivity.getString(R.string.weather_rainy);
+                    textIcon = currentActivity.getString(R.string.weather_rainy);
                     break;
             }
         }
-        weatherIcon.setText(icon);
-
-        URL url;
-        Bitmap bmp = null;
-        try {
-            url = new URL(getIconLink());
-            bmp = BitmapFactory.decodeStream(url.openConnection().getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        weatherIconImage.setImageBitmap(bmp);
+        weatherIcon.setText(textIcon);
     }
 
     public void changeCity(String city, String lang) {

@@ -32,6 +32,7 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private MenuListAdapter adapter = null;
+    CityPreference cp;
 
     String currentCity;
     private AppBarConfiguration mAppBarConfiguration;
@@ -41,12 +42,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // загружаем последний выбранный город из настроек
-        CityPreference cp = new CityPreference(this);
+        cp = new CityPreference(this);
         currentCity = cp.getCity();
         setContentView(R.layout.activity_main);
         initViews();
         initList();
-        initFab();
+        initFabNext();
+        initFabPrev();
 
     }
 
@@ -86,15 +88,16 @@ public class MainActivity extends AppCompatActivity {
         //recyclerView.setAdapter(adapter);
     }
 
-    private void initFab() {
-        FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+    private void initFabNext() {
+        FloatingActionButton fab = findViewById(R.id.fabNext);
+        fab.setOnClickListener(view -> Snackbar.make(view, "Will Activate next city", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
+    }
+
+    private void initFabPrev() {
+        FloatingActionButton fab = findViewById(R.id.fabPrev);
+        fab.setOnClickListener(view -> Snackbar.make(view, "Will Activate prev city", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show());
     }
 
     private void initViews() {
@@ -112,19 +115,15 @@ public class MainActivity extends AppCompatActivity {
                 .setDrawerLayout(drawer)
                 .build();
 
-        drawer.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(getApplicationContext(), "Нажатие!", Toast.LENGTH_SHORT).show();
-            }
-        });
+        drawer.setOnClickListener(v -> Toast.makeText(getApplicationContext(), "Нажатие!", Toast.LENGTH_SHORT).show());
 
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment);
         NavigationUI.setupActionBarWithNavController(this, navController, mAppBarConfiguration);
         NavigationUI.setupWithNavController(navigationView, navController);
 
+        currentCity = cp.getCity();
+
         weatherFragment = new WeatherFragment();
-        weatherFragment.changeCity(currentCity, Locale.getDefault().getLanguage());
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.weather_container, weatherFragment);
         transaction.commit();
@@ -145,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
             }
             case R.id.menu_edit: {
                 showInputDialog();
+                currentCity = cp.getCity();
                 adapter.editItem(currentCity);
                 break;
             }
@@ -157,10 +157,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
             default: {
-                if (id != R.id.menu_more) {
-                    Toast.makeText(getApplicationContext(), getString(R.string.action_not_found),
-                            Toast.LENGTH_SHORT).show();
-                }
+
             }
             ActionBar bar = getSupportActionBar();
             if (bar != null) {
@@ -178,7 +175,10 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.gobutton), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                changeCity(input.getText().toString(), Locale.getDefault().getLanguage());
+                weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.weather_container, weatherFragment);
+                transaction.commit();
             }
         });
         builder.show();

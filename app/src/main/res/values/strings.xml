@@ -50,6 +50,7 @@
     <string name="press_button">Message from server</string>
     <string name="button">OK</string>
     <string name="weather_image" translatable="false">Weather image</string>
+    <string name="network_error">Connection Error!</string>
 
     <string-array name="citylist">
         <item>Murmansk</item>

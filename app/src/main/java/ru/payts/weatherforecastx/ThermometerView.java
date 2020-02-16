@@ -1,6 +1,7 @@
 package ru.payts.weatherforecastx;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
@@ -43,7 +44,7 @@ public class ThermometerView extends View {
     private int height = 0;
 
     // Уровень заряда
-    private int level = 20;
+    private int level;
     // касаемся элемента +
     private boolean pressed = false;
     // Слушатель касания +
@@ -116,7 +117,8 @@ public class ThermometerView extends View {
         // <declare-styleable name="ThermometerView">
         // следующее слово имя атрибута
         // <attr name="level" format="integer" />
-        level = typedArray.getInteger(R.styleable.ThermometerView_level, 25);
+        CityPreference cityPreference = new CityPreference((Activity) context);
+        level = 50 + (int)cityPreference.getTemperature();
 
         // В конце работы дадим сигнал,
         // что нам больше массив со значениями атрибутов не нужен
@@ -131,6 +133,11 @@ public class ThermometerView extends View {
         thermometerPaint.setColor(thermometerColor);
         thermometerPaint.setStyle(Paint.Style.FILL);
         levelPaint = new Paint();
+
+        if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
+        else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
+        else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
+
         levelPaint.setColor(levelColor);
         levelPaint.setStyle(Paint.Style.FILL);
         // Задать "краску" для нажатия на элемент +
@@ -177,6 +184,9 @@ public class ThermometerView extends View {
         if (pressed) {
             canvas.drawRect(levelRectangle, levelPressedPaint);
         } else {
+            if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
+            else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
+            else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
             canvas.drawRect(levelRectangle, levelPaint);
         }
     }

@@ -44,5 +44,6 @@
         <item>Архыз</item>
     </string-array>
     <string name="press_button">Сообщение сервера</string>
+    <string name="network_error">Connection Error!</string>
 
 </resources>
