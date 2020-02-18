@@ -42,13 +42,11 @@ public class WeatherFragment extends Fragment {
     private String icon;
     private Handler handler;
     private CityPreference cityPreference;
-    private WeatherFragment weatherFragment;
     private float currentTemp;
 
 
     public WeatherFragment() {
         handler = new Handler();
-        weatherFragment = this;
     }
 
     @Override
@@ -71,7 +69,6 @@ public class WeatherFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         weatherFont = Typeface.createFromAsset(Objects.requireNonNull(getActivity()).getAssets(), "fonts/weather.ttf");
         cityPreference = new CityPreference(getActivity());
         String city = cityPreference.getCity();
@@ -80,7 +77,7 @@ public class WeatherFragment extends Fragment {
 
     }
 
-    void updateWeatherData(final String city, final String lang) {
+    public void updateWeatherData(final String city, final String lang) {
         OpenWeatherRepo.getSingleton().getAPI().loadWeather(city,
                 "fea82f030303d179dd680b5ade7deeb0", "metric")
                 .enqueue(new Callback<WeatherRequestRestModel>() {
@@ -158,7 +155,7 @@ public class WeatherFragment extends Fragment {
 
     private void setPlaceName(String name, String country) {
         String cityText = name.toUpperCase() + ", " + country;
-        cityField.setText(cityText);
+        if (cityField!=null) cityField.setText(cityText);
         cityPreference.setCity(name.toUpperCase());
     }
 
@@ -166,21 +163,21 @@ public class WeatherFragment extends Fragment {
         String detailsText = description.toUpperCase() + "\n"
                 + "Humidity: " + humidity + "%" + "\n"
                 + "Pressure: " + pressure + "hPa";
-        detailsField.setText(detailsText);
+        if (detailsField!=null) detailsField.setText(detailsText);
     }
 
     private void setCurrentTemp(float temp) {
         currentTemp = temp;
         cityPreference.setTemperature(temp);
         String currentTextText = String.format(Locale.getDefault(), "%.2f", temp) + "\u2103";
-        currentTemperatureField.setText(currentTextText);
+        if (currentTemperatureField!=null) currentTemperatureField.setText(currentTextText);
     }
 
     private void setUpdatedText(long dt) {
         DateFormat dateFormat = DateFormat.getDateTimeInstance();
         String updateOn = dateFormat.format(new Date(dt * 1000));
         String updatedText = "Last update: " + updateOn;
-        updatedField.setText(updatedText);
+        if (updatedField!=null) updatedField.setText(updatedText);
     }
 
     private void setWeatherIcon(int actualId, long sunrise, long sunset) {
@@ -218,10 +215,11 @@ public class WeatherFragment extends Fragment {
                     break;
             }
         }
-        weatherIcon.setText(textIcon);
+        if(weatherIcon!=null) weatherIcon.setText(textIcon);
     }
 
     public void changeCity(String city, String lang) {
         updateWeatherData(city, lang);
     }
+
 }

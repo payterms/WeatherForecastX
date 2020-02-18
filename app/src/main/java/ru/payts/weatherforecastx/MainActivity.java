@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
         //RecyclerView recyclerView = findViewById(R.id.recyclerView);
         //recyclerView.setLayoutManager(manager);
         //recyclerView.setAdapter(adapter);
+
     }
 
     private void initFabNext() {
@@ -123,10 +124,13 @@ public class MainActivity extends AppCompatActivity {
 
         currentCity = cp.getCity();
 
-        weatherFragment = new WeatherFragment();
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-        transaction.replace(R.id.weather_container, weatherFragment);
-        transaction.commit();
+        //weatherFragment = new WeatherFragment();
+        weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
+        if (!isWeatherFragmentVisible() && weatherFragment != null) {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.replace(R.id.weather_container, weatherFragment);
+            transaction.commit();
+        }
     }
 
 
@@ -175,10 +179,14 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton(getString(R.string.gobutton), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
-                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
+                if (weatherFragment != null) {
+                    weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
+                }
+                /*FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.weather_container, weatherFragment);
-                transaction.commit();
+                transaction.commit();*/
+
             }
         });
         builder.show();
@@ -236,6 +244,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         System.out.println("onDestroy()");
+    }
+
+    private Boolean isWeatherFragmentVisible() {
+        return getSupportFragmentManager().findFragmentByTag("WEATHER") != null && getSupportFragmentManager().findFragmentByTag("WEATHER").isVisible();
     }
 
 }
