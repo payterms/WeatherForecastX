@@ -31,7 +31,7 @@ public class ThermometerView extends View {
     // Изображение градусника
     private RectF thermometerRectangle = new RectF();
     // Изображение уровня заряда
-    private Rect levelRectangle = new Rect();
+    private RectF levelRectangle = new RectF();
     // "Краска" уровня заряда при касании +
     private Paint levelPressedPaint;
     // "Краска" градусника
@@ -54,7 +54,7 @@ public class ThermometerView extends View {
     // Отступ элементов
     private final static int padding = 10;
     // Скругление углов градусника
-    private final static int round = 5;
+    private final static int round = 15;
     // Ширина головы градусника
     private final static int headWidth = 10;
 
@@ -63,8 +63,11 @@ public class ThermometerView extends View {
         init();
     }
 
-    public void setlevel(int level) {
+    public void setLevel(int level) {
         this.level = level;
+        if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
+        else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
+        else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
     }
 
     // Вызывается при добавлении элемента в макет
@@ -118,7 +121,7 @@ public class ThermometerView extends View {
         // следующее слово имя атрибута
         // <attr name="level" format="integer" />
         CityPreference cityPreference = new CityPreference((Activity) context);
-        level = 50 + (int)cityPreference.getTemperature();
+        level = 50 + (int) cityPreference.getTemperature();
 
         // В конце работы дадим сигнал,
         // что нам больше массив со значениями атрибутов не нужен
@@ -178,16 +181,25 @@ public class ThermometerView extends View {
         super.onDraw(canvas);
         Log.d(TAG, "onDraw");
 
+        CityPreference cityPreference = new CityPreference((Activity) getContext());
+        level = 50 + (int) cityPreference.getTemperature();
+
+        if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
+        else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
+        else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
+
+        levelPaint.setColor(levelColor);
+
+        String msg = String.format("level %d", level);
+        Log.d(TAG, msg);
+
         canvas.drawRoundRect(thermometerRectangle, round, round, thermometerPaint);
 
         // Условие отрисовки, если нажат или нет элемент +
         if (pressed) {
-            canvas.drawRect(levelRectangle, levelPressedPaint);
+            canvas.drawRoundRect(levelRectangle,round, round, levelPressedPaint);
         } else {
-            if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
-            else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
-            else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
-            canvas.drawRect(levelRectangle, levelPaint);
+            canvas.drawRoundRect(levelRectangle,round, round, levelPaint);
         }
     }
 
@@ -233,7 +245,25 @@ public class ThermometerView extends View {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Log.d(TAG, "onMeasure");
+        CityPreference cityPreference = new CityPreference((Activity) getContext());
+        level = 50 + (int) cityPreference.getTemperature();
+
+        if ((level < 50) && (level > 0)) levelColor = Color.BLUE;
+        else if ((level < 70) && (level >= 50)) levelColor = Color.YELLOW;
+        else if ((level <= 100) && (level >= 70)) levelColor = Color.RED;
+
+        levelPaint.setColor(levelColor);
+
+        String msg = String.format("level %d", level);
+        Log.d(TAG, msg);
+
+        levelRectangle.set(2 * padding,
+                2 * padding,
+                (int) ((width - 2 * padding - headWidth) * ((double) level / (double) 100)),
+                height - 2 * padding);
+
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
     }
 
     @Override
@@ -245,7 +275,20 @@ public class ThermometerView extends View {
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         Log.d(TAG, "onLayout");
+        String msg = String.format("left %d right %d top %d bottom %d level %d", left, right, top, bottom, level);
+        Log.d(TAG, msg);
+
         super.onLayout(changed, left, top, right, bottom);
+
+        levelPaint.setColor(levelColor);
+        thermometerRectangle.set(padding, padding,
+                width - padding - headWidth,
+                height - padding);
+
+        levelRectangle.set(2 * padding,
+                2 * padding,
+                (int) ((width - 2 * padding - headWidth) * ((double) level / (double) 100)),
+                height - 2 * padding);
     }
 
     @Override

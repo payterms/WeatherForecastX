@@ -26,6 +26,8 @@ import java.util.Objects;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import ru.payts.weatherforecastx.model.City;
+import ru.payts.weatherforecastx.model.WeatherRec;
 import ru.payts.weatherforecastx.rest.OpenWeatherRepo;
 import ru.payts.weatherforecastx.rest.entities.WeatherRequestRestModel;
 
@@ -45,8 +47,14 @@ public class WeatherFragment extends Fragment {
     private float currentTemp;
 
 
+    private static City currentCity;
+    private static WeatherRec currentWeather;
+
+
     public WeatherFragment() {
         handler = new Handler();
+        currentCity = new City();
+        currentWeather = new WeatherRec();
     }
 
     @Override
@@ -138,12 +146,18 @@ public class WeatherFragment extends Fragment {
     private void renderWeather(WeatherRequestRestModel model) {
         setPlaceName(model.name, model.sys.country);
         setDetails(model.weather[0].description, model.main.humidity, model.main.pressure);
+        setCoords(model.coordinates.lon, model.coordinates.lat);
         setCurrentTemp(model.main.temp);
         setUpdatedText(model.dt);
         setWeatherIcon(model.weather[0].id,
                 model.sys.sunrise * 1000,
                 model.sys.sunset * 1000);
         setWeatherIconImage(model.weather[0].icon);
+    }
+
+    private void setCoords(float lon, float lat) {
+        currentCity.coordinates.lon = lon;
+        currentCity.coordinates.lat = lat;
     }
 
     private void setWeatherIconImage(String iconID) {
@@ -155,29 +169,33 @@ public class WeatherFragment extends Fragment {
 
     private void setPlaceName(String name, String country) {
         String cityText = name.toUpperCase() + ", " + country;
-        if (cityField!=null) cityField.setText(cityText);
+        if (cityField != null) cityField.setText(cityText);
         cityPreference.setCity(name.toUpperCase());
+        currentCity.cityName = name.toUpperCase();
+        currentCity.countryName = country.toUpperCase();
     }
 
     private void setDetails(String description, float humidity, float pressure) {
         String detailsText = description.toUpperCase() + "\n"
                 + "Humidity: " + humidity + "%" + "\n"
                 + "Pressure: " + pressure + "hPa";
-        if (detailsField!=null) detailsField.setText(detailsText);
+        if (detailsField != null) detailsField.setText(detailsText);
     }
 
     private void setCurrentTemp(float temp) {
         currentTemp = temp;
         cityPreference.setTemperature(temp);
+        currentWeather.mainRestRecord.temp = temp;
         String currentTextText = String.format(Locale.getDefault(), "%.2f", temp) + "\u2103";
-        if (currentTemperatureField!=null) currentTemperatureField.setText(currentTextText);
+        thermometerView.setLevel(50 + (int) temp);
+        if (currentTemperatureField != null) currentTemperatureField.setText(currentTextText);
     }
 
     private void setUpdatedText(long dt) {
         DateFormat dateFormat = DateFormat.getDateTimeInstance();
         String updateOn = dateFormat.format(new Date(dt * 1000));
         String updatedText = "Last update: " + updateOn;
-        if (updatedField!=null) updatedField.setText(updatedText);
+        if (updatedField != null) updatedField.setText(updatedText);
     }
 
     private void setWeatherIcon(int actualId, long sunrise, long sunset) {
@@ -215,11 +233,19 @@ public class WeatherFragment extends Fragment {
                     break;
             }
         }
-        if(weatherIcon!=null) weatherIcon.setText(textIcon);
+        if (weatherIcon != null) weatherIcon.setText(textIcon);
     }
 
     public void changeCity(String city, String lang) {
         updateWeatherData(city, lang);
+    }
+
+    public static City getCurrentCity() {
+        return currentCity;
+    }
+
+    public static WeatherRec getCurrentWeather() {
+        return currentWeather;
     }
 
 }

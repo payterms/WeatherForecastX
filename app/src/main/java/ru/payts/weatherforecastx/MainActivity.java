@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.view.ContextMenu;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
@@ -21,6 +22,8 @@ import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
@@ -29,14 +32,23 @@ import com.google.android.material.snackbar.Snackbar;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import ru.payts.weatherforecastx.dao.WeatherDao;
+import ru.payts.weatherforecastx.model.City;
+import ru.payts.weatherforecastx.model.CityWeather;
+
 public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
-    private MenuListAdapter adapter = null;
+
     CityPreference cp;
 
     String currentCity;
     private AppBarConfiguration mAppBarConfiguration;
     WeatherFragment weatherFragment;
+
+//    private WeatherSource weatherSource;
+//    private CityRecyclerAdapter adapter = null;
+
+    private MenuListAdapter adapter = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,19 +61,13 @@ public class MainActivity extends AppCompatActivity {
         initList();
         initFabNext();
         initFabPrev();
-
+        //initRecyclerView();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
-    }
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        getMenuInflater().inflate(R.menu.main, menu);
     }
 
     @Override
@@ -133,6 +139,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.context_menu, menu);
+    }
 
     private void handleMenuItemClick(MenuItem item) {
         int id = item.getItemId();
@@ -146,9 +158,9 @@ public class MainActivity extends AppCompatActivity {
                 showInputDialog();
                 break;
             }
+
             case R.id.menu_edit: {
                 showInputDialog();
-                currentCity = cp.getCity();
                 adapter.editItem(currentCity);
                 break;
             }
@@ -183,9 +195,6 @@ public class MainActivity extends AppCompatActivity {
                 if (weatherFragment != null) {
                     weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
                 }
-                /*FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                transaction.replace(R.id.weather_container, weatherFragment);
-                transaction.commit();*/
 
             }
         });

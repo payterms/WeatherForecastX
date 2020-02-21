@@ -51,6 +51,10 @@
     <string name="button">OK</string>
     <string name="weather_image" translatable="false">Weather image</string>
     <string name="network_error">Connection Error!</string>
+    <string name="view">View</string>
+    <string name="add">Add</string>
+    <string name="update">Update</string>
+    <string name="remove">Remove</string>
 
     <string-array name="citylist">
         <item>Murmansk</item>
