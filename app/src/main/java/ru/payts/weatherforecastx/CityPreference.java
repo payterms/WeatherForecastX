@@ -4,7 +4,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 
 public class CityPreference {
-    SharedPreferences prefs;
+    private SharedPreferences prefs;
 
     public CityPreference(Activity activity) {
         prefs = activity.getPreferences(Activity.MODE_PRIVATE);
@@ -14,7 +14,16 @@ public class CityPreference {
         return prefs.getString("city", "London");
     }
 
+    float getTemperature() {
+        return prefs.getFloat("temperature", 0);
+    }
+
+    void setTemperature(float temp) {
+        prefs.edit().putFloat("temperature", temp).commit();
+    }
+
     void setCity(String city) {
         prefs.edit().putString("city", city).commit();
     }
+
 }

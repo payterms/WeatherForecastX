@@ -10,48 +10,46 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class MenuListAdapter extends RecyclerView.Adapter<MenuListAdapter.ViewHolder> {
     private ArrayList<String> cityList;
     private Activity activity;
 
-    public MenuListAdapter(ArrayList<String> cityList, Activity activity) {
+    MenuListAdapter(ArrayList<String> cityList, Activity activity) {
         this.activity = activity;
-        if(cityList != null) {
+        if (cityList != null) {
             this.cityList = cityList;
         } else {
             this.cityList = new ArrayList<>();
             String[] defaultList = this.activity.getResources().getStringArray(R.array.citylist);
-                for (int i = 0; i < defaultList.length; i++)
-                {
-                    cityList.add(defaultList[i]);
-               }
+            Collections.addAll(this.cityList, defaultList);
 
         }
     }
 
-    public void addItem(String city) {
+    void addItem(String city) {
         cityList.add(city);
         notifyItemInserted(cityList.size() - 1);
     }
 
-    public void editItem(String newCity) {
-        if(cityList.size() > 0) {
+    void editItem(String newCity) {
+        if (cityList.size() > 0) {
             int latestElement = cityList.size() - 1;
             cityList.set(latestElement, newCity);
             notifyItemChanged(latestElement);
         }
     }
 
-    public void removeElement() {
-        if(cityList.size() > 0) {
+    void removeElement() {
+        if (cityList.size() > 0) {
             int latestElement = cityList.size() - 1;
             cityList.remove(latestElement);
             notifyItemRemoved(latestElement);
         }
     }
 
-    public void clearList() {
+    void clearList() {
         cityList.clear();
         notifyDataSetChanged();
     }

@@ -2,8 +2,8 @@
     <string name="app_name">WeatherForecastX</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Weather Oracle</string>
+    <string name="nav_header_subtitle">somemail@some.com</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
@@ -11,8 +11,8 @@
     <string name="menu_gallery">Cities</string>
     <string name="menu_slideshow">Weather on map</string>
     <string name="menu_tools">Tools</string>
-    <string name="menu_share">Share</string>
-    <string name="menu_send">Send</string>
+    <string name="menu_share">About</string>
+    <string name="menu_send">Contact developer</string>
 
     <string name="change_city">Change city</string>
 
@@ -47,6 +47,10 @@
     <string name="mesure_items">Units</string>
     <string name="settings">Settings</string>
     <string name="action_not_found">Not Found</string>
+    <string name="press_button">Message from server</string>
+    <string name="button">OK</string>
+    <string name="weather_image" translatable="false">Weather image</string>
+    <string name="network_error">Connection Error!</string>
 
     <string-array name="citylist">
         <item>Murmansk</item>
