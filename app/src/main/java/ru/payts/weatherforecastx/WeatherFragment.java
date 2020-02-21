@@ -27,6 +27,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import ru.payts.weatherforecastx.model.City;
+import ru.payts.weatherforecastx.model.Coords;
+import ru.payts.weatherforecastx.model.MainRestRecord;
 import ru.payts.weatherforecastx.model.WeatherRec;
 import ru.payts.weatherforecastx.rest.OpenWeatherRepo;
 import ru.payts.weatherforecastx.rest.entities.WeatherRequestRestModel;
@@ -54,7 +56,9 @@ public class WeatherFragment extends Fragment {
     public WeatherFragment() {
         handler = new Handler();
         currentCity = new City();
+        currentCity.coordinates = new Coords();
         currentWeather = new WeatherRec();
+        currentWeather.mainRestRecord = new MainRestRecord();
     }
 
     @Override
@@ -156,8 +160,9 @@ public class WeatherFragment extends Fragment {
     }
 
     private void setCoords(float lon, float lat) {
+        if (currentCity.coordinates!= null){
         currentCity.coordinates.lon = lon;
-        currentCity.coordinates.lat = lat;
+        currentCity.coordinates.lat = lat;}
     }
 
     private void setWeatherIconImage(String iconID) {

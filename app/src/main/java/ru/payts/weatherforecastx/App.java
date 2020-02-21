@@ -33,7 +33,7 @@ public class App extends Application {
         db = Room.databaseBuilder(
                     getApplicationContext(),
                     WeatherDatabase.class,
-                    "education_database")
+                    "weather_database")
                 .allowMainThreadQueries() //Только для примеров и тестирования.
                 .addMigrations(new Migration_1_2())
                 .build();

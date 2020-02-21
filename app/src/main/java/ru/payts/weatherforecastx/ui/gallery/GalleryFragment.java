@@ -43,7 +43,8 @@ public class GalleryFragment extends Fragment {
                              ViewGroup container, Bundle savedInstanceState) {
         galleryViewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
         View root = inflater.inflate(R.layout.fragment_gallery, container, false);
-        RecyclerView recyclerView = getActivity().findViewById(R.id.recyclerView);
+
+        RecyclerView recyclerView = root.getRootView().findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
@@ -51,6 +52,7 @@ public class GalleryFragment extends Fragment {
         WeatherDao weatherDao = App
                 .getInstance()
                 .getWeatherDao();
+
         weatherSource = new WeatherSource(weatherDao);
 
         adapter = new CityRecyclerAdapter(weatherSource, getActivity());
@@ -148,7 +150,7 @@ public class GalleryFragment extends Fragment {
 
 
     private void initRecyclerView() {
-        RecyclerView recyclerView = getActivity().findViewById(R.id.recyclerView);
+        RecyclerView recyclerView = getActivity().findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
