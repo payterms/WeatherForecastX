@@ -66,13 +66,7 @@ public class MainActivity extends AppCompatActivity {
         initFabNext();
         initFabPrev();
         // Программная регистрация ресивера
-        IntentFilter ourFilter = new IntentFilter();
-        ourFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-        ourFilter.addAction(Intent.ACTION_BATTERY_LOW);
-        ourFilter.addAction(Intent.ACTION_BATTERY_OKAY);
-        ourFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
-        registerReceiver(statesMessageReceiver, ourFilter);
-        initNotificationChannel();
+
 
     }
 
@@ -249,6 +243,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         System.out.println("onResume()");
+        IntentFilter ourFilter = new IntentFilter();
+        ourFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        ourFilter.addAction(Intent.ACTION_BATTERY_LOW);
+        ourFilter.addAction(Intent.ACTION_BATTERY_OKAY);
+        ourFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(statesMessageReceiver, ourFilter);
+        initNotificationChannel();
     }
 
     @Override
@@ -267,6 +268,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         System.out.println("onStop()");
+        unregisterReceiver(statesMessageReceiver);
     }
 
     @Override
