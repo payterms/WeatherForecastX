@@ -7,21 +7,22 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Locale;
+import java.util.Objects;
+
 import ru.payts.weatherforecastx.App;
 import ru.payts.weatherforecastx.CityCardDialogFragment;
+import ru.payts.weatherforecastx.CityPreference;
 import ru.payts.weatherforecastx.CityRecyclerAdapter;
 import ru.payts.weatherforecastx.R;
 import ru.payts.weatherforecastx.WeatherFragment;
@@ -29,35 +30,41 @@ import ru.payts.weatherforecastx.WeatherSource;
 import ru.payts.weatherforecastx.dao.WeatherDao;
 import ru.payts.weatherforecastx.model.City;
 import ru.payts.weatherforecastx.model.CityWeather;
-import ru.payts.weatherforecastx.ui.send.SendViewModel;
+import ru.payts.weatherforecastx.model.WeatherRec;
 
 public class GalleryFragment extends Fragment {
 
+    private static final String CITYLIST_FRAGMENT_TAG = "CITYLISTFRAGMENT";
     private WeatherSource weatherSource;
-    private CityRecyclerAdapter adapter = null;
-
-    private GalleryViewModel galleryViewModel;
-
+    private CityRecyclerAdapter adapter;
+    private GalleryFragment frag;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        galleryViewModel = new ViewModelProvider(this).get(GalleryViewModel.class);
+
+        super.onCreateView(inflater, container, savedInstanceState);
+
         View root = inflater.inflate(R.layout.fragment_gallery, container, false);
 
-        RecyclerView recyclerView = root.getRootView().findViewById(R.id.recycler_view);
+        /*if (frag == null) {
+            frag = new GalleryFragment();
+        }
+        FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_gallery, frag, CITYLIST_FRAGMENT_TAG);
+        transaction.commit();*/
+
+        return root;
+    }
+
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
         recyclerView.setHasFixedSize(true);
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
         recyclerView.setLayoutManager(layoutManager);
-
-        WeatherDao weatherDao = App
-                .getInstance()
-                .getWeatherDao();
-
-        weatherSource = new WeatherSource(weatherDao);
-
-        adapter = new CityRecyclerAdapter(weatherSource, getActivity());
+        initRecyclerViewAdapter();
         recyclerView.setAdapter(adapter);
-        return root;
     }
 
     @Override
@@ -81,8 +88,9 @@ public class GalleryFragment extends Fragment {
             case R.id.add_context:
                 // Получаем студента со случайными данными
                 City cityForInsert = WeatherFragment.getCurrentCity();
+                WeatherRec weatherForInsert = WeatherFragment.getCurrentWeather();
                 // Добавляем студента
-                weatherSource.addCity(cityForInsert);
+                weatherSource.addCity(cityForInsert, weatherForInsert);
                 adapter.notifyDataSetChanged();
                 return true;
             case R.id.update_context:
@@ -118,30 +126,17 @@ public class GalleryFragment extends Fragment {
 
         switch (id) {
             case R.id.menu_add: {
-                adapter.addItem(WeatherFragment.getCurrentCity());
+                adapter.addItem(WeatherFragment.getCurrentCity(), WeatherFragment.getCurrentWeather());
                 break;
             }
             case R.id.menu_search: {
                 //showInputDialog();
                 break;
             }
-            case R.id.menu_edit: {
-                //showInputDialog();
-                adapter.editItem(WeatherFragment.getCurrentCity());
-                break;
-            }
-            case R.id.menu_remove: {
-                adapter.removeElement(1);
-                break;
-            }
-            case R.id.menu_clear: {
-                adapter.clearList();
-                break;
-            }
             default: {
 
             }
-            ActionBar bar = ((AppCompatActivity)getActivity()).getSupportActionBar();
+            ActionBar bar = ((AppCompatActivity) getActivity()).getSupportActionBar();
             if (bar != null) {
                 bar.setDisplayHomeAsUpEnabled(true);
             }
@@ -149,19 +144,18 @@ public class GalleryFragment extends Fragment {
     }
 
 
-    private void initRecyclerView() {
-        RecyclerView recyclerView = getActivity().findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        recyclerView.setLayoutManager(layoutManager);
-
+    private void initRecyclerViewAdapter() {
         WeatherDao weatherDao = App
                 .getInstance()
                 .getWeatherDao();
+
         weatherSource = new WeatherSource(weatherDao);
 
         adapter = new CityRecyclerAdapter(weatherSource, getActivity());
-        recyclerView.setAdapter(adapter);
+    }
+
+    public void updateDataInAdapter(){
+        adapter.notifyDataSetChanged();
     }
 
 

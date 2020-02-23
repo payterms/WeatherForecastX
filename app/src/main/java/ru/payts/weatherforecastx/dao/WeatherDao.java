@@ -22,32 +22,36 @@ import ru.payts.weatherforecastx.model.WeatherRec;
 @Dao
 public interface WeatherDao {
 
-    // Метод для добавления студента в базу данных
+    // Метод для добавления города в базу данных
     // @Insert - признак добавления
     // onConflict - что делать, если такая запись уже есть
     // В данном случае просто заменим ее
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insertCity(City city);
 
-    // Метод для замены данных студента
+    // Метод для замены данных города
     @Update
     void updateCity(City city);
 
-    // Удалим данные студента
+    // Удалим данные города
     @Delete
     void deleteCity(City city);
 
-    // Удалим данные студента, просто зная ключ
+    // Удалим данные города, просто зная ключ
     @Query("DELETE FROM City WHERE id = :id")
     void deteleCityById(long id);
 
-    // Заберем данные по всем студентам
+    // Заберем данные по всем городам
     @Query("SELECT * FROM City")
     List<City> getAllCitys();
 
-    // Получим данные только одного студента по id
+    // Получим данные только одного города по id
     @Query("SELECT * FROM City WHERE id = :id")
     City getCityById(long id);
+
+    // Получим данные только одного города по id
+    @Query("SELECT * FROM City WHERE city_name = :cityName")
+    City getCityByName(String cityName);
 
     //Получить количество записей в таблице
     @Query("SELECT COUNT() FROM City")
@@ -59,7 +63,7 @@ public interface WeatherDao {
             "INNER JOIN WeatherRec ON City.id = WeatherRec.City_id")
     List<CityWithWeather> getCityWithWeather();
 
-    // Получим почту одного студента
+    // Получим запись погоды одного города
     @Query("SELECT * FROM WeatherRec WHERE City_id = :CityId")
     List<WeatherRec> getWeatherByCity(long CityId);
 
@@ -67,7 +71,7 @@ public interface WeatherDao {
     @Query("SELECT * FROM City")
     List<CityWeather> getCityWeatherRecs();
 
-    // Получить через Relation одного студента
+    // Получить через Relation одного города
     @Query("SELECT * FROM City WHERE id = :id")
     CityWeather getOneCityWeatherRecs(long id);
 

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import ru.payts.weatherforecastx.model.City;
+import ru.payts.weatherforecastx.model.WeatherRec;
 
 // Адаптер для RecyclerView
 public class CityRecyclerAdapter extends RecyclerView.Adapter<CityRecyclerAdapter.ViewHolder> {
@@ -43,8 +44,8 @@ public class CityRecyclerAdapter extends RecyclerView.Adapter<CityRecyclerAdapte
         City city = citys.get(position);
         holder.cityName.setText(city.cityName);
         holder.countryName.setText(city.countryName);
-        holder.cityLon.setText(Float.toString(city.coordinates.lon));
-        holder.cityLat.setText(Float.toString(city.coordinates.lat));
+        holder.cityLon.setText(((city.coordinates.lon >= 0)?"E":"W") + Float.toString(Math.abs(city.coordinates.lon)));
+        holder.cityLat.setText(((city.coordinates.lat >= 0)?"N":"S") + Float.toString(Math.abs(city.coordinates.lat)));
 
         // Тут определим, в каком пункте меню было нажато
         holder.cardView.setOnLongClickListener(view -> {
@@ -67,8 +68,8 @@ public class CityRecyclerAdapter extends RecyclerView.Adapter<CityRecyclerAdapte
         return menuPosition;
     }
 
-    public void addItem(City city) {
-        dataSource.addCity(city);
+    public void addItem(City city, WeatherRec weather) {
+        dataSource.addCity(city, weather);
         notifyItemInserted(getItemCount() - 1);
     }
 

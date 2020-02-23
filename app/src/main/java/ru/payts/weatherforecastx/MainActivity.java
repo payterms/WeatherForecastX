@@ -17,24 +17,22 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
-import java.util.ArrayList;
 import java.util.Locale;
 
 import ru.payts.weatherforecastx.dao.WeatherDao;
-import ru.payts.weatherforecastx.model.City;
-import ru.payts.weatherforecastx.model.CityWeather;
+import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
@@ -44,9 +42,7 @@ public class MainActivity extends AppCompatActivity {
     String currentCity;
     private AppBarConfiguration mAppBarConfiguration;
     WeatherFragment weatherFragment;
-
-//    private WeatherSource weatherSource;
-//    private CityRecyclerAdapter adapter = null;
+    private WeatherSource weatherSource;
 
     private MenuListAdapter adapter = null;
 
@@ -84,10 +80,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initList() {
-        ArrayList<String> data = new ArrayList<>();
+        WeatherDao weatherDao = App
+                .getInstance()
+                .getWeatherDao();
+
+        weatherSource = new WeatherSource(weatherDao);
+        /*ArrayList<String> data = new ArrayList<>();
         data.add("Tula");
         data.add("Orel");
-        adapter = new MenuListAdapter(data, this);
+        adapter = new MenuListAdapter(data, this);*/
         //LinearLayoutManager manager = new LinearLayoutManager(getApplicationContext());
         //RecyclerView recyclerView = findViewById(R.id.recyclerView);
         //recyclerView.setLayoutManager(manager);
@@ -137,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
             transaction.replace(R.id.weather_container, weatherFragment);
             transaction.commit();
         }
+
     }
 
     @Override
@@ -147,11 +149,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void handleMenuItemClick(MenuItem item) {
+        boolean dataChanged = false;
         int id = item.getItemId();
 
         switch (id) {
             case R.id.menu_add: {
-                adapter.addItem(currentCity);
+                weatherSource.addCity(weatherFragment.getCurrentCity(), weatherFragment.getCurrentWeather());
+                dataChanged = true;
                 break;
             }
             case R.id.menu_search: {
@@ -159,25 +163,31 @@ public class MainActivity extends AppCompatActivity {
                 break;
             }
 
-            case R.id.menu_edit: {
-                showInputDialog();
-                adapter.editItem(currentCity);
-                break;
-            }
-            case R.id.menu_remove: {
-                adapter.removeElement();
-                break;
-            }
-            case R.id.menu_clear: {
-                adapter.clearList();
+            case R.id.menu_refresh: {
+                weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
+                if (weatherFragment != null) {
+                    weatherFragment.updateWeatherData(cp.getCity(), Locale.getDefault().getLanguage());
+                    dataChanged = true;
+                }
                 break;
             }
             default: {
 
             }
+
+
             ActionBar bar = getSupportActionBar();
             if (bar != null) {
                 bar.setDisplayHomeAsUpEnabled(true);
+            }
+        }
+        if(dataChanged){
+            GalleryFragment cityListFragment = (GalleryFragment) getSupportFragmentManager().findFragmentByTag("CITYLISTFRAGMENT");
+
+            // Check if the fragment is available
+            if (cityListFragment!= null) {
+                // Call your method in the GalleryFragment
+                cityListFragment.updateDataInAdapter();
             }
         }
     }
@@ -258,5 +268,6 @@ public class MainActivity extends AppCompatActivity {
     private Boolean isWeatherFragmentVisible() {
         return getSupportFragmentManager().findFragmentByTag("WEATHER") != null && getSupportFragmentManager().findFragmentByTag("WEATHER").isVisible();
     }
+
 
 }

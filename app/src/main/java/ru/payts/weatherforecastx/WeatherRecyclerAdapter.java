@@ -29,7 +29,8 @@ public class WeatherRecyclerAdapter extends RecyclerView.Adapter<WeatherRecycler
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.textWeather.setText(Float.toString(weatherRecs.get(position).mainRestRecord.temp));
+        holder.textWeather.setTextSize(10);
+        holder.textWeather.setText(weatherRecs.get(position).mainRestRecord.updateOn + ": T= " + Float.toString(weatherRecs.get(position).mainRestRecord.temp)+ "\u2103");
     }
 
     @Override

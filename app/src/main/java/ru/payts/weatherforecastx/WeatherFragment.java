@@ -200,6 +200,7 @@ public class WeatherFragment extends Fragment {
         DateFormat dateFormat = DateFormat.getDateTimeInstance();
         String updateOn = dateFormat.format(new Date(dt * 1000));
         String updatedText = "Last update: " + updateOn;
+        currentWeather.mainRestRecord.updateOn = updateOn;
         if (updatedField != null) updatedField.setText(updatedText);
     }
 

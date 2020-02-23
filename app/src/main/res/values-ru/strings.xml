@@ -15,7 +15,7 @@
     <string name="menu_share">О разработчике</string>
     <string name="menu_send">Форма обратной связи</string>
 
-    <string name="change_city">Изменить город</string>
+    <string name="refresh_weather">Обновить погоду</string>
     <string name="activity_second">Вторая активность</string>
     <string name="place_not_found">Извините, данных нет</string>
     <string name="to_back">Назад</string>
@@ -45,7 +45,7 @@
     </string-array>
     <string name="press_button">Сообщение сервера</string>
     <string name="network_error">Connection Error!</string>
-    <string name="view">View</string>
+    <string name="view">History</string>
     <string name="add">Add</string>
     <string name="update">Update</string>
     <string name="remove">Remove</string>

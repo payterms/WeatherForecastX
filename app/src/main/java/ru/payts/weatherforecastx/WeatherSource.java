@@ -41,21 +41,19 @@ public class WeatherSource {
     }
 
     // Добавить студента
-    public void addCity(City city) {
-        long id = weatherDao.insertCity(city);
-        WeatherRec email1 = new WeatherRec();
-        email1.cityId = id;
-        email1.mainRestRecord.temp = 20;
-        email1.mainRestRecord.feels_like = 20+5;
-        email1.mainRestRecord.humidity = 95;
-        email1.mainRestRecord.pressure = 1005;
-        email1.mainRestRecord.temp_max = 29;
-        email1.mainRestRecord.temp_min = 15;
-        weatherDao.insertWeatherRec(email1);
-        WeatherRec email2 = new WeatherRec();
-        email2.cityId = id;
-        email2.mainRestRecord.temp = 10;
-        weatherDao.insertWeatherRec(email2);
+    public void addCity(City city, WeatherRec weather) {
+        long id;
+        City cityFromDB = weatherDao.getCityByName(city.cityName);
+        if (cityFromDB == null) {
+            // такого города нет в базе - добавляем его
+            id = weatherDao.insertCity(city);
+        } else {
+            // город уже в базе - просто берем его ID
+            id = cityFromDB.id;
+        }
+        // привязываем запись о погоде к текущему городу
+        weather.cityId = id;
+        weatherDao.insertWeatherRec(weather);
         // После изменения БД надо перечитать буфер
         loadCitys();
     }

@@ -12,29 +12,22 @@
         android:textSize="20sp" />
 
     <TextView
-        android:id="@+id/textCountryName"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="TextView"
-        android:textSize="20sp" />
-
-    <TextView
         android:id="@+id/textCityLon"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="TextView"
-        android:textSize="20sp" />
+        android:textSize="15sp" />
 
     <TextView
         android:id="@+id/textCityLat"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="TextView"
-        android:textSize="20sp" />
+        android:textSize="15sp" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/cityRecycler"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"/>
 
 </LinearLayout>

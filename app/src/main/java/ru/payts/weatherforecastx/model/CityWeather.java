@@ -8,7 +8,7 @@ import java.util.List;
 
 // Результат запроса через Relation
 // первый запрос по городам,
-// далее запросы по каждому студенту для получения WeatherRec
+// далее запросы по каждому городу для получения WeatherRec
 public class CityWeather implements Serializable {
 
     @Embedded

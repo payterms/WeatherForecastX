@@ -55,14 +55,14 @@ public class CityCardDialogFragment extends DialogFragment {
 
     private void initViews(View view, CityWeather city) {
         TextView textCity = view.findViewById(R.id.textCityName);
-        TextView textCountry = view.findViewById(R.id.textCountryName);
+        //TextView textCountry = view.findViewById(R.id.textCountryName);
         TextView textCityLon = view.findViewById(R.id.textCityLon);
         TextView textCityLat = view.findViewById(R.id.textCityLat);
 
-        textCity.setText(city.city.cityName);
-        textCountry.setText(city.city.countryName);
-        textCityLon.setText(Float.toString(city.city.coordinates.lon));
-        textCityLat.setText(Float.toString(city.city.coordinates.lat));
+        textCity.setText(city.city.cityName + ", " + city.city.countryName);
+        //textCountry.setText(city.city.countryName);
+        textCityLon.setText("Longitude:" + ((city.city.coordinates.lon >= 0) ? "E" : "W") + Float.toString(Math.abs(city.city.coordinates.lon)));
+        textCityLat.setText("Latitude:" + ((city.city.coordinates.lat >= 0)?"N":"S") + Float.toString(Math.abs(city.city.coordinates.lat)));
 
     }
 }
