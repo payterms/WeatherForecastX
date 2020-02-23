@@ -1,7 +1,14 @@
 package ru.payts.weatherforecastx;
 
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.ContextMenu;
@@ -36,6 +43,7 @@ import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
+    private BroadcastReceiver statesMessageReceiver = new StatesMessageReceiver();
 
     CityPreference cp;
 
@@ -57,7 +65,15 @@ public class MainActivity extends AppCompatActivity {
         initList();
         initFabNext();
         initFabPrev();
-        //initRecyclerView();
+        // Программная регистрация ресивера
+        IntentFilter ourFilter = new IntentFilter();
+        ourFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        ourFilter.addAction(Intent.ACTION_BATTERY_LOW);
+        ourFilter.addAction(Intent.ACTION_BATTERY_OKAY);
+        ourFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(statesMessageReceiver, ourFilter);
+        initNotificationChannel();
+
     }
 
     @Override
@@ -269,5 +285,16 @@ public class MainActivity extends AppCompatActivity {
         return getSupportFragmentManager().findFragmentByTag("WEATHER") != null && getSupportFragmentManager().findFragmentByTag("WEATHER").isVisible();
     }
 
+    // инициализация канала нотификаций
+    private void initNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            NotificationChannel channel = new NotificationChannel("2", "name", importance);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
 
 }
