@@ -4,6 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="ru.payts.weatherforecastx.MainActivity">
     <item
+        android:id="@+id/menu_current"
+        android:icon="@android:drawable/ic_menu_mylocation"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/get_in_current_point" />
+    <item
         android:id="@+id/menu_add"
         android:icon="@android:drawable/ic_menu_add"
         android:orderInCategory="10"

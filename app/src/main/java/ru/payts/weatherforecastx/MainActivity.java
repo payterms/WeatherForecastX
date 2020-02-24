@@ -1,5 +1,6 @@
 package ru.payts.weatherforecastx;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -8,6 +9,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Criteria;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
@@ -23,25 +31,30 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
-import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 
 import ru.payts.weatherforecastx.dao.WeatherDao;
 import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int PERMISSION_REQUEST_CODE = 10;
     private Toolbar toolbar;
     private BroadcastReceiver statesMessageReceiver = new StatesMessageReceiver();
 
@@ -51,6 +64,16 @@ public class MainActivity extends AppCompatActivity {
     private AppBarConfiguration mAppBarConfiguration;
     WeatherFragment weatherFragment;
     private WeatherSource weatherSource;
+
+    Location currentLocation;
+
+    LatLng currentCoordinates;
+
+    private String textLatitude;
+    private String textLongitude;
+
+    private GoogleMap mMap;
+    private Marker currentMarker;
 
     private MenuListAdapter adapter = null;
 
@@ -65,10 +88,117 @@ public class MainActivity extends AppCompatActivity {
         initList();
         initFabNext();
         initFabPrev();
-        // Программная регистрация ресивера
+        requestPemissions();
+    }
 
+    private void requestPemissions() {
+        // Проверим на пермиссии, и если их нет, запросим у пользователя
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // запросим координаты
+            requestLocation();
+        } else {
+            // пермиссии нет, будем запрашивать у пользователя
+            requestLocationPermissions();
+        }
 
     }
+
+    // Запрос координат
+    private void requestLocation() {
+        // Если пермиссии все таки нет - то просто выйдем, приложение не имеет смысла
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return;
+        // Получить менеджер геолокаций
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        Criteria criteria = new Criteria();
+        criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+
+        // получим наиболее подходящий провайдер геолокации по критериям
+        // Но можно и самому назначать какой провайдер использовать.
+        // В основном это LocationManager.GPS_PROVIDER или LocationManager.NETWORK_PROVIDER
+        // но может быть и LocationManager.PASSIVE_PROVIDER, это когда координаты уже кто-то недавно получил.
+        String provider = locationManager.getBestProvider(criteria, true);
+        if (provider != null) {
+            // Будем получать геоположение через каждые 10 секунд или каждые 10 метров
+            locationManager.requestLocationUpdates(provider, 10000, 10, new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    currentLocation = location;
+
+                    double lat = location.getLatitude();// Широта
+                    textLatitude = Double.toString(lat);
+
+                    double lng = location.getLongitude();// Долгота
+                    textLongitude = Double.toString(lng);
+
+                    String accuracy = Float.toString(location.getAccuracy());   // Точность
+
+                    /*LatLng currentPosition = new LatLng(lat, lng);
+                    currentMarker.setPosition(currentPosition);
+                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, (float) 12));*/
+                }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+                }
+
+                @Override
+                public void onProviderEnabled(String provider) {
+                }
+
+                @Override
+                public void onProviderDisabled(String provider) {
+                }
+            });
+        }
+    }
+
+    // Запрос пермиссии для геолокации
+    private void requestLocationPermissions() {
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.CALL_PHONE)) {
+            // Запросим эти две пермиссии у пользователя
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                    },
+                    PERMISSION_REQUEST_CODE);
+        }
+    }
+
+
+    // Это результат запроса у пользователя пермиссии
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {   // Это та самая пермиссия, что мы запрашивали?
+            if (grantResults.length == 2 &&
+                    (grantResults[0] == PackageManager.PERMISSION_GRANTED || grantResults[1] == PackageManager.PERMISSION_GRANTED)) {
+                // Все препоны пройдены и пермиссия дана
+                // Запросим координаты
+                requestLocation();
+            }
+        }
+    }
+
+    // Получаем адрес по координатам
+    private void getAddress(final LatLng location) {
+        final Geocoder geocoder = new Geocoder(this);
+        // Поскольку geocoder работает по интернету, создадим отдельный поток
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
+                    currentCity = addresses.get(0).getLocality();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -163,6 +293,16 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch (id) {
+            case R.id.menu_current: {
+                weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
+                if (weatherFragment != null) {
+                    LatLng coord = new LatLng( currentLocation.getLatitude(), currentLocation.getLongitude());
+                    getAddress(coord);
+                    weatherFragment.updateWeatherData(currentCity, Locale.getDefault().getLanguage());
+                    //dataChanged = true;
+                }
+                break;
+            }
             case R.id.menu_add: {
                 weatherSource.addCity(weatherFragment.getCurrentCity(), weatherFragment.getCurrentWeather());
                 dataChanged = true;
@@ -191,11 +331,11 @@ public class MainActivity extends AppCompatActivity {
                 bar.setDisplayHomeAsUpEnabled(true);
             }
         }
-        if(dataChanged){
+        if (dataChanged) {
             GalleryFragment cityListFragment = (GalleryFragment) getSupportFragmentManager().findFragmentByTag("CITYLISTFRAGMENT");
 
             // Check if the fragment is available
-            if (cityListFragment!= null) {
+            if (cityListFragment != null) {
                 // Call your method in the GalleryFragment
                 cityListFragment.updateDataInAdapter();
             }

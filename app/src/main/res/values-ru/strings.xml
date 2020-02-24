@@ -49,5 +49,6 @@
     <string name="add">Add</string>
     <string name="update">Update</string>
     <string name="remove">Remove</string>
+    <string name="get_in_current_point">Get in current point</string>
 
 </resources>
