@@ -14,7 +14,7 @@
     <string name="menu_share">About</string>
     <string name="menu_send">Contact developer</string>
 
-    <string name="change_city">Change city</string>
+    <string name="refresh_weather">Refresh</string>
 
     <string name="open_weather_maps_app_id" translatable="false">fea82f030303d179dd680b5ade7deeb0</string>
 
@@ -51,6 +51,11 @@
     <string name="button">OK</string>
     <string name="weather_image" translatable="false">Weather image</string>
     <string name="network_error">Connection Error!</string>
+    <string name="view">History</string>
+    <string name="add">Add</string>
+    <string name="update">Update</string>
+    <string name="remove">Remove</string>
+    <string name="get_in_current_point">Get in current point</string>
 
     <string-array name="citylist">
         <item>Murmansk</item>
