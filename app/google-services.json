@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "709726416587",
+    "firebase_url": "https://weatherforecastx.firebaseio.com",
+    "project_id": "weatherforecastx",
+    "storage_bucket": "weatherforecastx.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:709726416587:android:d4fa1e0e12acb97bdf354e",
+        "android_client_info": {
+          "package_name": "ru.payts.weatherforecastx"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "709726416587-vr66bbqvf0m6p4f1ccue8oivb4l46rt0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ru.payts.weatherforecastx",
+            "certificate_hash": "79ff6a776d99c2e389b0b6b423ca87e90777e01b"
+          }
+        },
+        {
+          "client_id": "709726416587-mdg703d6olrtil0kflphe8rlr0fcmnvc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyByFwEcloLQG5artrsen-BRLgn4xRzaaAc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "709726416587-mdg703d6olrtil0kflphe8rlr0fcmnvc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
