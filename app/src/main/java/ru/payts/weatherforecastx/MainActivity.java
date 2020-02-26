@@ -19,6 +19,7 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -55,6 +56,7 @@ import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 10;
+    private static final String TAG = "MainActivity";
     private Toolbar toolbar;
     private BroadcastReceiver statesMessageReceiver = new StatesMessageReceiver();
 
@@ -65,12 +67,20 @@ public class MainActivity extends AppCompatActivity {
     WeatherFragment weatherFragment;
     private WeatherSource weatherSource;
 
+    /**
+     * The link to a {@link LocationManager} instance for quick access.
+     */
+    private LocationManager mLocManager = null;
+
+    /**
+     * The link to a Location Listener instance.
+     */
+    private LocListener mLocListener = null;
+
     Location currentLocation;
+    String cityFound;
 
     LatLng currentCoordinates;
-
-    private String textLatitude;
-    private String textLongitude;
 
     private GoogleMap mMap;
     private Marker currentMarker;
@@ -106,12 +116,18 @@ public class MainActivity extends AppCompatActivity {
 
     // Запрос координат
     private void requestLocation() {
+        // Create Location Listener object (if needed)
+        if (mLocListener == null) mLocListener = new LocListener();
+        // Setting up Location Listener
+        // min time - 3 seconds
+        // min distance - 1 meter
         // Если пермиссии все таки нет - то просто выйдем, приложение не имеет смысла
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             return;
+
         // Получить менеджер геолокаций
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        mLocManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_COARSE);
 
@@ -119,39 +135,10 @@ public class MainActivity extends AppCompatActivity {
         // Но можно и самому назначать какой провайдер использовать.
         // В основном это LocationManager.GPS_PROVIDER или LocationManager.NETWORK_PROVIDER
         // но может быть и LocationManager.PASSIVE_PROVIDER, это когда координаты уже кто-то недавно получил.
-        String provider = locationManager.getBestProvider(criteria, true);
+        String provider = mLocManager.getBestProvider(criteria, true);
         if (provider != null) {
-            // Будем получать геоположение через каждые 10 секунд или каждые 10 метров
-            locationManager.requestLocationUpdates(provider, 10000, 10, new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    currentLocation = location;
-
-                    double lat = location.getLatitude();// Широта
-                    textLatitude = Double.toString(lat);
-
-                    double lng = location.getLongitude();// Долгота
-                    textLongitude = Double.toString(lng);
-
-                    String accuracy = Float.toString(location.getAccuracy());   // Точность
-
-                    /*LatLng currentPosition = new LatLng(lat, lng);
-                    currentMarker.setPosition(currentPosition);
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, (float) 12));*/
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-                }
-
-                @Override
-                public void onProviderEnabled(String provider) {
-                }
-
-                @Override
-                public void onProviderDisabled(String provider) {
-                }
-            });
+            currentLocation = mLocManager.getLastKnownLocation(provider);
+            mLocManager.requestLocationUpdates(provider, 3000L, 1.0F, mLocListener);
         }
     }
 
@@ -191,12 +178,26 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     final List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
-                    currentCity = addresses.get(0).getLocality();
+                    cityFound = addresses.get(0).getLocality();
+                    Log.d(TAG, "Current Locality:" + cityFound);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
         }).start();
+    }
+
+    // Получаем адрес по координатам
+    private void getAddressGUI(final LatLng location) {
+        final Geocoder geocoder = new Geocoder(this);
+        try {
+            cityFound = null;
+            final List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
+            cityFound = addresses.get(0).getLocality();
+            Log.d(TAG, "Current Locality:" + cityFound);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 
@@ -225,15 +226,6 @@ public class MainActivity extends AppCompatActivity {
                 .getWeatherDao();
 
         weatherSource = new WeatherSource(weatherDao);
-        /*ArrayList<String> data = new ArrayList<>();
-        data.add("Tula");
-        data.add("Orel");
-        adapter = new MenuListAdapter(data, this);*/
-        //LinearLayoutManager manager = new LinearLayoutManager(getApplicationContext());
-        //RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        //recyclerView.setLayoutManager(manager);
-        //recyclerView.setAdapter(adapter);
-
     }
 
     private void initFabNext() {
@@ -271,7 +263,6 @@ public class MainActivity extends AppCompatActivity {
 
         currentCity = cp.getCity();
 
-        //weatherFragment = new WeatherFragment();
         weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
         if (!isWeatherFragmentVisible() && weatherFragment != null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -296,10 +287,25 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_current: {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    LatLng coord = new LatLng( currentLocation.getLatitude(), currentLocation.getLongitude());
-                    getAddress(coord);
-                    weatherFragment.updateWeatherData(currentCity, Locale.getDefault().getLanguage());
-                    //dataChanged = true;
+                    // запросим координаты
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    Activity#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for Activity#requestPermissions for more details.
+                        return;
+                    }
+                    if (currentLocation == null) {
+                        currentLocation = mLocManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+                    }
+                    if (currentLocation != null) {
+                        LatLng coord = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                        getAddressGUI(coord);
+                        weatherFragment.updateWeatherDataByLoc(coord, Locale.getDefault().getLanguage());
+                    }
                 }
                 break;
             }
@@ -316,7 +322,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_refresh: {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    weatherFragment.updateWeatherData(cp.getCity(), Locale.getDefault().getLanguage());
+                    weatherFragment.updateWeatherDataByLoc(cp.getLatLng(), Locale.getDefault().getLanguage());
                     dataChanged = true;
                 }
                 break;
@@ -353,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
+                    weatherFragment.updateWeatherDataByCity(input.getText().toString(), Locale.getDefault().getLanguage());
                 }
 
             }
@@ -390,12 +396,16 @@ public class MainActivity extends AppCompatActivity {
         ourFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(statesMessageReceiver, ourFilter);
         initNotificationChannel();
+        requestLocation();
+
     }
 
     @Override
     protected void onPause() {
+        // Remove Location Listener
+        if (mLocListener != null) mLocManager.removeUpdates(mLocListener);
+
         super.onPause();
-        System.out.println("onPause()");
     }
 
     @Override
@@ -439,4 +449,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Class that implements Location Listener interface
+     */
+    private final class LocListener implements LocationListener {
+
+        /**
+         * Called when the location has changed.
+         */
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(TAG, "onLocationChanged: " + location.toString());
+            currentLocation = location;
+            double lat = location.getLatitude();// Широта
+            double lng = location.getLongitude();// Долгота
+            String accuracy = Float.toString(location.getAccuracy());   // Точность
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) { /* Empty */ }
+
+        @Override
+        public void onProviderEnabled(String provider) { /* Empty */ }
+
+        @Override
+        public void onProviderDisabled(String provider) { /* Empty */ }
+    }
 }
