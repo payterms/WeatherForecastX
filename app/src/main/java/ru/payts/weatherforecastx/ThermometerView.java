@@ -254,9 +254,6 @@ public class ThermometerView extends View {
 
         levelPaint.setColor(levelColor);
 
-        String msg = String.format("level %d", level);
-        Log.d(TAG, msg);
-
         levelRectangle.set(2 * padding,
                 2 * padding,
                 (int) ((width - 2 * padding - headWidth) * ((double) level / (double) 100)),
@@ -268,16 +265,12 @@ public class ThermometerView extends View {
 
     @Override
     public void layout(int l, int t, int r, int b) {
-        Log.d(TAG, "layout");
+
         super.layout(l, t, r, b);
     }
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        Log.d(TAG, "onLayout");
-        String msg = String.format("left %d right %d top %d bottom %d level %d", left, right, top, bottom, level);
-        Log.d(TAG, msg);
-
         super.onLayout(changed, left, top, right, bottom);
 
         levelPaint.setColor(levelColor);

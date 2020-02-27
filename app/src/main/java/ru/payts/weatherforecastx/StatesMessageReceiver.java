@@ -30,7 +30,7 @@ public class StatesMessageReceiver extends BroadcastReceiver {
                 if (batteryPct < 0.2) {
                     message = "BATTERY < 20%";
                 }
-                Log.d(TAG, "Battery Level:" + Float.toString(batteryPct));
+                //Log.d(TAG, "Battery Level:" + Float.toString(batteryPct));
                 break;
             case Intent.ACTION_BATTERY_LOW:
                 message = "VERY LOW BATTERY!!!";

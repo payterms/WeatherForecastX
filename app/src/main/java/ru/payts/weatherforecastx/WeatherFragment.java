@@ -16,6 +16,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
+import com.google.android.gms.maps.model.LatLng;
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
@@ -31,6 +32,7 @@ import ru.payts.weatherforecastx.model.Coords;
 import ru.payts.weatherforecastx.model.MainRestRecord;
 import ru.payts.weatherforecastx.model.WeatherRec;
 import ru.payts.weatherforecastx.rest.OpenWeatherRepo;
+import ru.payts.weatherforecastx.rest.OpenWeatherRepoByLoc;
 import ru.payts.weatherforecastx.rest.entities.WeatherRequestRestModel;
 
 public class WeatherFragment extends Fragment {
@@ -54,11 +56,11 @@ public class WeatherFragment extends Fragment {
 
 
     public WeatherFragment() {
-        handler = new Handler();
-        currentCity = new City();
-        currentCity.coordinates = new Coords();
-        currentWeather = new WeatherRec();
-        currentWeather.mainRestRecord = new MainRestRecord();
+        this.handler = new Handler();
+        this.currentCity = new City();
+        this.currentCity.coordinates = new Coords();
+        this.currentWeather = new WeatherRec();
+        this.currentWeather.mainRestRecord = new MainRestRecord();
     }
 
     @Override
@@ -83,15 +85,65 @@ public class WeatherFragment extends Fragment {
         super.onCreate(savedInstanceState);
         weatherFont = Typeface.createFromAsset(Objects.requireNonNull(getActivity()).getAssets(), "fonts/weather.ttf");
         cityPreference = new CityPreference(getActivity());
-        String city = cityPreference.getCity();
+        LatLng loc = cityPreference.getLatLng();
         currentTemp = cityPreference.getTemperature();
-        updateWeatherData(city, Locale.getDefault().getLanguage());
+        updateWeatherDataByLoc(loc, Locale.getDefault().getLanguage());
 
     }
 
-    public void updateWeatherData(final String city, final String lang) {
+    public void updateWeatherDataByCity(final String city, final String lang) {
         OpenWeatherRepo.getSingleton().getAPI().loadWeather(city,
-                "fea82f030303d179dd680b5ade7deeb0", "metric")
+                "fea82f030303d179dd680b5ade7deeb0", "metric", lang)
+                .enqueue(new Callback<WeatherRequestRestModel>() {
+                    @Override
+                    public void onResponse(@NonNull Call<WeatherRequestRestModel> call,
+                                           @NonNull Response<WeatherRequestRestModel> response) {
+                        if (response.body() != null && response.isSuccessful()) {
+                            renderWeather(response.body());
+                        } else {
+                            //Похоже, код у нас не в диапазоне [200..300) и случилась ошибка
+                            //обрабатываем ее
+                            if (response.code() == 500) {
+                                //ой, случился Internal Server Error. Решаем проблему
+                                // Создаем билдер и передаем контекст приложения
+                                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                                // в билдере указываем заголовок окна (можно указывать как ресурс, так и строку)
+                                builder.setTitle(R.string.press_button)
+                                        // указываем сообщение в окне (также есть вариант со строковым параметром)
+                                        .setMessage(R.string.place_not_found)
+                                        // можно указать и пиктограмму
+                                        .setIcon(R.drawable.moose)
+                                        // из этого окна нельзя выйти кнопкой back
+                                        .setCancelable(false)
+                                        // устанавливаем кнопку (название кнопки также можно задавать строкой)
+                                        .setPositiveButton(R.string.button,
+                                                // Ставим слушатель, нажатие будем обрабатывать
+                                                new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int id) {
+                                                        //Toast.makeText(getActivity(), "Кнопка нажата", Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                AlertDialog alert = builder.create();
+                                alert.show();
+                            } else if (response.code() == 401) {
+                                //не авторизованы, что-то с этим делаем
+                                Toast.makeText(getActivity(), "Not Authorised", Toast.LENGTH_SHORT).show();
+                            }// и так далее
+                        }
+                    }
+
+                    //сбой при интернет подключении
+                    @Override
+                    public void onFailure(Call<WeatherRequestRestModel> call, Throwable t) {
+                        Toast.makeText(getActivity().getBaseContext(), getString(R.string.network_error),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    public void updateWeatherDataByLoc(final LatLng loc, final String lang) {
+        OpenWeatherRepoByLoc.getSingleton().getAPI().loadWeather(Float.toString((float) loc.latitude), Float.toString((float) loc.longitude),
+                "fea82f030303d179dd680b5ade7deeb0", "metric", lang)
                 .enqueue(new Callback<WeatherRequestRestModel>() {
                     @Override
                     public void onResponse(@NonNull Call<WeatherRequestRestModel> call,
@@ -160,9 +212,11 @@ public class WeatherFragment extends Fragment {
     }
 
     private void setCoords(float lon, float lat) {
-        if (currentCity.coordinates!= null){
-        currentCity.coordinates.lon = lon;
-        currentCity.coordinates.lat = lat;}
+        if (currentCity.coordinates != null) {
+            currentCity.coordinates.lon = lon;
+            currentCity.coordinates.lat = lat;
+            cityPreference.setLatLng(lat, lon);
+        }
     }
 
     private void setWeatherIconImage(String iconID) {
@@ -176,8 +230,10 @@ public class WeatherFragment extends Fragment {
         String cityText = name.toUpperCase() + ", " + country;
         if (cityField != null) cityField.setText(cityText);
         cityPreference.setCity(name.toUpperCase());
-        currentCity.cityName = name.toUpperCase();
-        currentCity.countryName = country.toUpperCase();
+        if (currentCity != null) {
+            currentCity.cityName = name.toUpperCase();
+            currentCity.countryName = country.toUpperCase();
+        }
     }
 
     private void setDetails(String description, float humidity, float pressure) {
@@ -190,7 +246,9 @@ public class WeatherFragment extends Fragment {
     private void setCurrentTemp(float temp) {
         currentTemp = temp;
         cityPreference.setTemperature(temp);
-        currentWeather.mainRestRecord.temp = temp;
+        if (currentWeather != null) {
+            currentWeather.mainRestRecord.temp = temp;
+        }
         String currentTextText = String.format(Locale.getDefault(), "%.2f", temp) + "\u2103";
         thermometerView.setLevel(50 + (int) temp);
         if (currentTemperatureField != null) currentTemperatureField.setText(currentTextText);
@@ -200,7 +258,9 @@ public class WeatherFragment extends Fragment {
         DateFormat dateFormat = DateFormat.getDateTimeInstance();
         String updateOn = dateFormat.format(new Date(dt * 1000));
         String updatedText = "Last update: " + updateOn;
-        currentWeather.mainRestRecord.updateOn = updateOn;
+        if (currentWeather != null) {
+            currentWeather.mainRestRecord.updateOn = updateOn;
+        }
         if (updatedField != null) updatedField.setText(updatedText);
     }
 
@@ -243,7 +303,7 @@ public class WeatherFragment extends Fragment {
     }
 
     public void changeCity(String city, String lang) {
-        updateWeatherData(city, lang);
+        updateWeatherDataByCity(city, lang);
     }
 
     public static City getCurrentCity() {
