@@ -17,6 +17,23 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        debug {
+            applicationIdSuffix = '.debug'
+        }
+
+    }
+    flavorDimensions 'version'
+    productFlavors {
+        freeConfig {
+            dimension = 'version'
+            versionNameSuffix = '.free'
+            applicationIdSuffix = '.free'
+        }
+        proConfig {
+            dimension = 'version'
+            applicationIdSuffix = '.pro'
+            versionNameSuffix = '-pro'
+        }
     }
     android {
         compileOptions {

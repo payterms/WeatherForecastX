@@ -403,8 +403,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onPause() {
         // Remove Location Listener
-        if (mLocListener != null) mLocManager.removeUpdates(mLocListener);
-
+        if (mLocListener != null)
+            if(mLocManager!=null)
+            mLocManager.removeUpdates(mLocListener);
         super.onPause();
     }
 
