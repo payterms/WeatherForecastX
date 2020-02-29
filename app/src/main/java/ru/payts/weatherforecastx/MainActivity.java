@@ -16,6 +16,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
@@ -26,6 +27,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,14 +43,22 @@ import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 
@@ -56,8 +67,24 @@ import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 10;
+    private final int RC_SIGN_IN = 100;
     private static final String TAG = "MainActivity";
     private Toolbar toolbar;
+    SignInButton signInButton;
+    boolean isSignedIn = false;
+
+    private int drawableResourceId = R.drawable.login;
+
+    TextView usrName ;
+    TextView usrEmail;
+    ImageView usrImg;
+
+    String userName;
+    String userMail;
+    Uri userPhoto;
+
+    GoogleSignInClient googleSignInClient;
+
     private BroadcastReceiver statesMessageReceiver = new StatesMessageReceiver();
 
     CityPreference cp;
@@ -204,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
+        menu.findItem(R.id.menu_sign_in).setIcon(drawableResourceId);
         return true;
     }
 
@@ -221,6 +249,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initList() {
+        // Конфигурация запроса на регистрацию пользователя, чтобы получить
+        // идентификатор пользователя, его почту и основной профайл (регулируется параметром)
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestProfile()
+                .build();
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+
         WeatherDao weatherDao = App
                 .getInstance()
                 .getWeatherDao();
@@ -270,6 +307,10 @@ public class MainActivity extends AppCompatActivity {
             transaction.commit();
         }
 
+        View header = navigationView.getHeaderView(0);
+        usrName = (TextView) header.findViewById(R.id.userName);
+        usrEmail = (TextView) header.findViewById(R.id.userEmail);
+        usrImg = (ImageView) header.findViewById(R.id.userImg);
     }
 
     @Override
@@ -327,6 +368,23 @@ public class MainActivity extends AppCompatActivity {
                 }
                 break;
             }
+            case R.id.menu_sign_in: {
+                if (isSignedIn == false){
+                    Intent signInIntent = googleSignInClient.getSignInIntent();
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                    drawableResourceId = R.drawable.logout;
+                }
+                else{
+                    googleSignInClient.signOut();
+                    isSignedIn = false;
+                    drawableResourceId = R.drawable.login;
+                }
+                invalidateOptionsMenu();
+                break;
+            }
+
+
+
             default: {
 
             }
@@ -376,7 +434,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        System.out.println("onStart()");
+        // Проверим, заходил ли пользователь в этом приложении через Гугл
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            // Обновим почтовый адрес этого пользователя и выведем его на экран
+            isSignedIn = true;
+            userName = account.getDisplayName();
+            usrName.setText(userName);
+            userMail = account.getEmail();
+            usrEmail.setText(userMail);
+            userPhoto = account.getPhotoUrl();
+            usrImg.setImageURI(userPhoto);
+            drawableResourceId = R.drawable.logout;
+        }
+        else{
+            isSignedIn = false;
+        }
     }
 
     @Override
@@ -404,8 +477,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         // Remove Location Listener
         if (mLocListener != null)
-            if(mLocManager!=null)
-            mLocManager.removeUpdates(mLocListener);
+            if (mLocManager != null)
+                mLocManager.removeUpdates(mLocListener);
         super.onPause();
     }
 
@@ -475,5 +548,39 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onProviderDisabled(String provider) { /* Empty */ }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            isSignedIn = true;
+            drawableResourceId = R.drawable.logout;
+            // Signed in successfully, show authenticated UI.
+            userName = account.getDisplayName();
+            usrName.setText(userName);
+            userMail = account.getEmail();
+            usrEmail.setText(userMail);
+            userPhoto = account.getPhotoUrl();
+            usrImg.setImageURI(userPhoto);
+            Log.w(TAG, "signInResult:success code=" + userName + userMail);
+            //Здесь мы отправляем токен на сервер.
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
     }
 }

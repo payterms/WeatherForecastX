@@ -44,7 +44,7 @@ public class WeatherSource {
         return weatherDao.getCountCitys();
     }
 
-    // Добавить студента
+    // Добавить город
     public void addCity(City city, WeatherRec weather) {
         long id;
         City cityFromDB = weatherDao.getCityByName(city.cityName);
