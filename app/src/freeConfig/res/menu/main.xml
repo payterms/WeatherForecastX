@@ -8,9 +8,15 @@
         android:icon="@android:drawable/ic_menu_mylocation"
         android:orderInCategory="10"
         app:showAsAction="ifRoom"
-        android:visible="false"
         android:enabled="false"
+        android:visible="false"
         android:title="@string/get_in_current_point" />
+    <item
+        android:id="@+id/menu_sign_in"
+        android:icon="@android:drawable/ic_lock_idle_charging"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/common_signin_button_text" />
     <item
         android:id="@+id/menu_add"
         android:icon="@android:drawable/ic_menu_add"
