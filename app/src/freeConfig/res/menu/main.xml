@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="ru.payts.weatherforecastx.MainActivity">
+    <item
+        android:id="@+id/menu_current"
+        android:icon="@android:drawable/ic_menu_mylocation"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:enabled="false"
+        android:visible="false"
+        android:title="@string/get_in_current_point" />
+    <item
+        android:id="@+id/menu_sign_in"
+        android:icon="@android:drawable/ic_lock_idle_charging"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/common_signin_button_text" />
+    <item
+        android:id="@+id/menu_add"
+        android:icon="@android:drawable/ic_menu_add"
+        android:orderInCategory="10"
+        app:showAsAction="ifRoom"
+        android:title="@string/add_city" />
+
+    <item
+        android:id="@+id/menu_search"
+        android:icon="@android:drawable/ic_menu_search"
+        android:orderInCategory="20"
+        app:showAsAction="ifRoom"
+        android:title="@string/search_city" />
+
+    <item
+        android:id="@+id/menu_refresh"
+        android:orderInCategory="30"
+        android:title="@string/refresh_weather"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/menu_more"
+        android:orderInCategory="60"
+        android:title="@string/more">
+
+        <menu>
+            <item
+                android:title="@string/mesure_items"/>
+            <item
+                android:title="@string/settings" />
+        </menu>
+
+    </item>
+</menu>

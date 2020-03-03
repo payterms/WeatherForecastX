@@ -16,15 +16,19 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -39,14 +43,22 @@ import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 
@@ -55,7 +67,24 @@ import ru.payts.weatherforecastx.ui.gallery.GalleryFragment;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_CODE = 10;
+    private final int RC_SIGN_IN = 100;
+    private static final String TAG = "MainActivity";
     private Toolbar toolbar;
+    SignInButton signInButton;
+    boolean isSignedIn = false;
+
+    private int drawableResourceId = R.drawable.login;
+
+    TextView usrName ;
+    TextView usrEmail;
+    ImageView usrImg;
+
+    String userName;
+    String userMail;
+    Uri userPhoto;
+
+    GoogleSignInClient googleSignInClient;
+
     private BroadcastReceiver statesMessageReceiver = new StatesMessageReceiver();
 
     CityPreference cp;
@@ -65,12 +94,20 @@ public class MainActivity extends AppCompatActivity {
     WeatherFragment weatherFragment;
     private WeatherSource weatherSource;
 
+    /**
+     * The link to a {@link LocationManager} instance for quick access.
+     */
+    private LocationManager mLocManager = null;
+
+    /**
+     * The link to a Location Listener instance.
+     */
+    private LocListener mLocListener = null;
+
     Location currentLocation;
+    String cityFound;
 
     LatLng currentCoordinates;
-
-    private String textLatitude;
-    private String textLongitude;
 
     private GoogleMap mMap;
     private Marker currentMarker;
@@ -106,12 +143,18 @@ public class MainActivity extends AppCompatActivity {
 
     // Запрос координат
     private void requestLocation() {
+        // Create Location Listener object (if needed)
+        if (mLocListener == null) mLocListener = new LocListener();
+        // Setting up Location Listener
+        // min time - 3 seconds
+        // min distance - 1 meter
         // Если пермиссии все таки нет - то просто выйдем, приложение не имеет смысла
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
             return;
+
         // Получить менеджер геолокаций
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        mLocManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         Criteria criteria = new Criteria();
         criteria.setAccuracy(Criteria.ACCURACY_COARSE);
 
@@ -119,39 +162,10 @@ public class MainActivity extends AppCompatActivity {
         // Но можно и самому назначать какой провайдер использовать.
         // В основном это LocationManager.GPS_PROVIDER или LocationManager.NETWORK_PROVIDER
         // но может быть и LocationManager.PASSIVE_PROVIDER, это когда координаты уже кто-то недавно получил.
-        String provider = locationManager.getBestProvider(criteria, true);
+        String provider = mLocManager.getBestProvider(criteria, true);
         if (provider != null) {
-            // Будем получать геоположение через каждые 10 секунд или каждые 10 метров
-            locationManager.requestLocationUpdates(provider, 10000, 10, new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    currentLocation = location;
-
-                    double lat = location.getLatitude();// Широта
-                    textLatitude = Double.toString(lat);
-
-                    double lng = location.getLongitude();// Долгота
-                    textLongitude = Double.toString(lng);
-
-                    String accuracy = Float.toString(location.getAccuracy());   // Точность
-
-                    /*LatLng currentPosition = new LatLng(lat, lng);
-                    currentMarker.setPosition(currentPosition);
-                    mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, (float) 12));*/
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-                }
-
-                @Override
-                public void onProviderEnabled(String provider) {
-                }
-
-                @Override
-                public void onProviderDisabled(String provider) {
-                }
-            });
+            currentLocation = mLocManager.getLastKnownLocation(provider);
+            mLocManager.requestLocationUpdates(provider, 3000L, 1.0F, mLocListener);
         }
     }
 
@@ -191,7 +205,8 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try {
                     final List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
-                    currentCity = addresses.get(0).getLocality();
+                    cityFound = addresses.get(0).getLocality();
+                    Log.d(TAG, "Current Locality:" + cityFound);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -199,10 +214,24 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    // Получаем адрес по координатам
+    private void getAddressGUI(final LatLng location) {
+        final Geocoder geocoder = new Geocoder(this);
+        try {
+            cityFound = null;
+            final List<Address> addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1);
+            cityFound = addresses.get(0).getLocality();
+            Log.d(TAG, "Current Locality:" + cityFound);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
+        menu.findItem(R.id.menu_sign_in).setIcon(drawableResourceId);
         return true;
     }
 
@@ -220,20 +249,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initList() {
+        // Конфигурация запроса на регистрацию пользователя, чтобы получить
+        // идентификатор пользователя, его почту и основной профайл (регулируется параметром)
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestProfile()
+                .build();
+
+        googleSignInClient = GoogleSignIn.getClient(this, gso);
+
         WeatherDao weatherDao = App
                 .getInstance()
                 .getWeatherDao();
 
         weatherSource = new WeatherSource(weatherDao);
-        /*ArrayList<String> data = new ArrayList<>();
-        data.add("Tula");
-        data.add("Orel");
-        adapter = new MenuListAdapter(data, this);*/
-        //LinearLayoutManager manager = new LinearLayoutManager(getApplicationContext());
-        //RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        //recyclerView.setLayoutManager(manager);
-        //recyclerView.setAdapter(adapter);
-
     }
 
     private void initFabNext() {
@@ -271,7 +300,6 @@ public class MainActivity extends AppCompatActivity {
 
         currentCity = cp.getCity();
 
-        //weatherFragment = new WeatherFragment();
         weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
         if (!isWeatherFragmentVisible() && weatherFragment != null) {
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
@@ -279,6 +307,10 @@ public class MainActivity extends AppCompatActivity {
             transaction.commit();
         }
 
+        View header = navigationView.getHeaderView(0);
+        usrName = (TextView) header.findViewById(R.id.userName);
+        usrEmail = (TextView) header.findViewById(R.id.userEmail);
+        usrImg = (ImageView) header.findViewById(R.id.userImg);
     }
 
     @Override
@@ -296,10 +328,25 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_current: {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    LatLng coord = new LatLng( currentLocation.getLatitude(), currentLocation.getLongitude());
-                    getAddress(coord);
-                    weatherFragment.updateWeatherData(currentCity, Locale.getDefault().getLanguage());
-                    //dataChanged = true;
+                    // запросим координаты
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    Activity#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the documentation
+                        // for Activity#requestPermissions for more details.
+                        return;
+                    }
+                    if (currentLocation == null) {
+                        currentLocation = mLocManager.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
+                    }
+                    if (currentLocation != null) {
+                        LatLng coord = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                        getAddressGUI(coord);
+                        weatherFragment.updateWeatherDataByLoc(coord, Locale.getDefault().getLanguage());
+                    }
                 }
                 break;
             }
@@ -316,11 +363,28 @@ public class MainActivity extends AppCompatActivity {
             case R.id.menu_refresh: {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    weatherFragment.updateWeatherData(cp.getCity(), Locale.getDefault().getLanguage());
+                    weatherFragment.updateWeatherDataByLoc(cp.getLatLng(), Locale.getDefault().getLanguage());
                     dataChanged = true;
                 }
                 break;
             }
+            case R.id.menu_sign_in: {
+                if (isSignedIn == false){
+                    Intent signInIntent = googleSignInClient.getSignInIntent();
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                    drawableResourceId = R.drawable.logout;
+                }
+                else{
+                    googleSignInClient.signOut();
+                    isSignedIn = false;
+                    drawableResourceId = R.drawable.login;
+                }
+                invalidateOptionsMenu();
+                break;
+            }
+
+
+
             default: {
 
             }
@@ -353,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(DialogInterface dialog, int which) {
                 weatherFragment = (WeatherFragment) getSupportFragmentManager().findFragmentByTag("WEATHER");
                 if (weatherFragment != null) {
-                    weatherFragment.updateWeatherData(input.getText().toString(), Locale.getDefault().getLanguage());
+                    weatherFragment.updateWeatherDataByCity(input.getText().toString(), Locale.getDefault().getLanguage());
                 }
 
             }
@@ -370,7 +434,22 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        System.out.println("onStart()");
+        // Проверим, заходил ли пользователь в этом приложении через Гугл
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account != null) {
+            // Обновим почтовый адрес этого пользователя и выведем его на экран
+            isSignedIn = true;
+            userName = account.getDisplayName();
+            usrName.setText(userName);
+            userMail = account.getEmail();
+            usrEmail.setText(userMail);
+            userPhoto = account.getPhotoUrl();
+            usrImg.setImageURI(userPhoto);
+            drawableResourceId = R.drawable.logout;
+        }
+        else{
+            isSignedIn = false;
+        }
     }
 
     @Override
@@ -390,12 +469,17 @@ public class MainActivity extends AppCompatActivity {
         ourFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(statesMessageReceiver, ourFilter);
         initNotificationChannel();
+        requestLocation();
+
     }
 
     @Override
     protected void onPause() {
+        // Remove Location Listener
+        if (mLocListener != null)
+            if (mLocManager != null)
+                mLocManager.removeUpdates(mLocListener);
         super.onPause();
-        System.out.println("onPause()");
     }
 
     @Override
@@ -439,4 +523,64 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Class that implements Location Listener interface
+     */
+    private final class LocListener implements LocationListener {
+
+        /**
+         * Called when the location has changed.
+         */
+        @Override
+        public void onLocationChanged(Location location) {
+            Log.d(TAG, "onLocationChanged: " + location.toString());
+            currentLocation = location;
+            double lat = location.getLatitude();// Широта
+            double lng = location.getLongitude();// Долгота
+            String accuracy = Float.toString(location.getAccuracy());   // Точность
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) { /* Empty */ }
+
+        @Override
+        public void onProviderEnabled(String provider) { /* Empty */ }
+
+        @Override
+        public void onProviderDisabled(String provider) { /* Empty */ }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            isSignedIn = true;
+            drawableResourceId = R.drawable.logout;
+            // Signed in successfully, show authenticated UI.
+            userName = account.getDisplayName();
+            usrName.setText(userName);
+            userMail = account.getEmail();
+            usrEmail.setText(userMail);
+            userPhoto = account.getPhotoUrl();
+            usrImg.setImageURI(userPhoto);
+            Log.w(TAG, "signInResult:success code=" + userName + userMail);
+            //Здесь мы отправляем токен на сервер.
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach
+            // a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
 }

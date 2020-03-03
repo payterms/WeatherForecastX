@@ -10,7 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -35,7 +34,7 @@ public class HomeFragment extends Fragment {
         if (weatherFragment == null) {
             weatherFragment = new WeatherFragment();
         }
-        weatherFragment.updateWeatherData(new CityPreference(Objects.requireNonNull(this.getActivity())).getCity(), Locale.getDefault().getLanguage());
+        weatherFragment.updateWeatherDataByLoc(new CityPreference(Objects.requireNonNull(this.getActivity())).getLatLng(), Locale.getDefault().getLanguage());
         FragmentTransaction transaction = getActivity().getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.weather_container, weatherFragment, "WEATHER");
         transaction.commit();

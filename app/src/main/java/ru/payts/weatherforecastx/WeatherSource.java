@@ -1,5 +1,9 @@
 package ru.payts.weatherforecastx;
 
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import java.util.List;
 
 import ru.payts.weatherforecastx.dao.WeatherDao;
@@ -40,7 +44,7 @@ public class WeatherSource {
         return weatherDao.getCountCitys();
     }
 
-    // Добавить студента
+    // Добавить город
     public void addCity(City city, WeatherRec weather) {
         long id;
         City cityFromDB = weatherDao.getCityByName(city.cityName);
